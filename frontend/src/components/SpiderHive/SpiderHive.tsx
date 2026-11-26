@@ -210,7 +210,7 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
     if (!lineRef.current) return;
     
     const time = Date.now() * 0.001;
-    material.dashOffset = (time * 0.5) % 1;
+    (material as any).dashOffset = (time * 0.5) % 1;
     material.opacity = THREE.MathUtils.lerp(
       material.opacity,
       0.2 + edge.intensity * 0.6,
