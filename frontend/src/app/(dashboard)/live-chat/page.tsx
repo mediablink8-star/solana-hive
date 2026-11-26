@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MainLayout } from '../../../../components/Layout/MainLayout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 
 export default function LiveChatPage() {
   const [messages, setMessages] = useState<Array<{
