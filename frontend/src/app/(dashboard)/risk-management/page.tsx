@@ -1,11 +1,9 @@
 'use client';
 
 import React from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 
 export default function RiskManagementPage() {
   return (
-    <MainLayout>
       <div className="space-y-6 p-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -142,7 +140,6 @@ export default function RiskManagementPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }
 

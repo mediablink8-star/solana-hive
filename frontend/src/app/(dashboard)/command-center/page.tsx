@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 import { SpiderHive } from '@/components/SpiderHive';
 import { useTokens, useAgents, useDecisions, usePortfolio, useValidation, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
@@ -480,6 +479,5 @@ export default function CommandCenterPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }

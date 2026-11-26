@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 import { SpiderHive } from '@/components/SpiderHive';
 import { useAgents, useDecisions, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
@@ -303,6 +302,5 @@ export default function HiveNetworkPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
   );
 }

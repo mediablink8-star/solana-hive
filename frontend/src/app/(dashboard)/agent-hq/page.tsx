@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 import { useAgents, useDecisions, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import type { Agent, AgentDecision } from '@/types';
@@ -209,6 +208,5 @@ export default function AgentHQPage() {
           ))}
         </div>
       </div>
-    </MainLayout>
   );
 }

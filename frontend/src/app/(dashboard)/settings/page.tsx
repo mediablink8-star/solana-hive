@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 import { usePortfolio, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 

@@ -1,11 +1,9 @@
 'use client';
 
 import React from 'react';
-import { MainLayout } from '@/components/Layout/MainLayout';
 
 export default function OpenPositionsPage() {
   return (
-    <MainLayout>
       <div className="space-y-6 p-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -29,6 +27,5 @@ export default function OpenPositionsPage() {
           <p className="text-hive-textDim">Execute a paper trade from the Token Scanner to open a position</p>
         </div>
       </div>
-    </MainLayout>
   );
 }
