@@ -1,11 +1,11 @@
 import express from "express";
 import { WebSocketServer } from "ws";
-import { DatabaseSync } from "node:sqlite";
+import Database from "better-sqlite3";
 
 const app = express();
 app.use(express.json());
 
-const db = new DatabaseSync("solana_hive.db");
+const db = new Database("solana_hive.db");
 db.exec(`CREATE TABLE IF NOT EXISTS agents (id TEXT PRIMARY KEY, name TEXT, role TEXT, status TEXT)`);
 db.exec(`CREATE TABLE IF NOT EXISTS messages (id INTEGER PRIMARY KEY AUTOINCREMENT, agent_id TEXT, text TEXT, created_at TEXT)`);
 db.exec(`CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT, payload TEXT, created_at TEXT)`);
