@@ -133,7 +133,8 @@ app.get("/performance", (req, res) => {
   res.json(rows);
 });
 
-const server = app.listen(4000, () => console.log("SOLANA HIVE backend on :4000"));
+const PORT = process.env.PORT || 4000;
+const server = app.listen(PORT, () => console.log(`SOLANA HIVE backend on :${PORT}`));
 const wss = new WebSocketServer({ server });
 const clients = new Set();
 wss.on("connection", (ws) => {
