@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MainLayout } from '@/components/Layout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { SpiderHive } from '@/components/SpiderHive';
 import { useAgents, useDecisions, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import type { SpiderNode } from '@/store';
+import type { SpiderNode } from '@/types';
 
 const AGENT_ROLES: Record<string, string> = {
   'Token Scout': 'Market Discovery',

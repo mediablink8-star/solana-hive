@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { MainLayout } from '@/components/Layout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useValidation, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 

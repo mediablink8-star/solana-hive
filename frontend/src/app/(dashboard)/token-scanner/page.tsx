@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { MainLayout } from '@/components/Layout';
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useTokens, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import type { Token } from '@/types';
