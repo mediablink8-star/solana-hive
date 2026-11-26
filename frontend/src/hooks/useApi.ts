@@ -173,92 +173,20 @@ export function useWebSocket() {
   const wsRef = useRef<WSConnection | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Polling-only mode: WebSocket disabled for Render free tier
+  // Polling in useTokens/useAgents/usePortfolio handles real-time updates
   const connect = useCallback(async () => {
-    try {
-      await api.connectWebSocket();
-      setWsConnected(true);
-      
-      // Listen for various WebSocket events
-      const unsubscribeWelcome = api.on('welcome', (data) => {
-        console.log('WS Welcome:', data);
-      });
-
-      const unsubscribeToken = api.on('token_discovered', (data: any) => {
-        addNotification({ type: 'info', message: `New token discovered: ${data.symbol || data.mint}` });
-      });
-
-      const unsubscribeAnalysis = api.on('analysis_started', (data: any) => {
-        if (data.agent) {
-          updateAgentState(data.agent, 'analyzing', data.task);
-        }
-      });
-
-      const unsubscribeAnalysisComplete = api.on('analysis_complete', (data: any) => {
-        if (data.agent) {
-          updateAgentState(data.agent, 'idle');
-        }
-      });
-
-      const unsubscribeDecision = api.on('decision_made', (data: any) => {
-        if (data.agent) {
-          updateAgentState(data.agent, data.recommendation === 'REJECT' ? 'rejecting' : 'approving');
-          // Reset after animation
-          setTimeout(() => updateAgentState(data.agent, 'idle'), 2000);
-        }
-      });
-
-      const unsubscribeTrade = api.on('trade_executed', (data: any) => {
-        addNotification({ type: 'success', message: `Paper trade executed: ${data.mint}` });
-      });
-
-      const unsubscribePosition = api.on('position_update', (data: any) => {
-        // Position updates will be fetched via polling
-      });
-
-      const unsubscribeRisk = api.on('risk_alert', (data: any) => {
-        addNotification({ type: 'warning', message: `Risk alert: ${data.message}` });
-      });
-
-      const unsubscribeHeartbeat = api.on('heartbeat', () => {
-        // Heartbeat received
-      });
-
-      // Store cleanup functions
-      wsRef.current = {
-        unsubscribe: () => {
-          unsubscribeWelcome();
-          unsubscribeToken();
-          unsubscribeAnalysis();
-          unsubscribeAnalysisComplete();
-          unsubscribeDecision();
-          unsubscribeTrade();
-          unsubscribePosition();
-          unsubscribeRisk();
-          unsubscribeHeartbeat();
-        },
-      } as any;
-
-    } catch (error) {
-      console.error('WebSocket connection failed:', error);
-      setWsConnected(false);
-      scheduleReconnect();
-    }
-  }, [setWsConnected, updateAgentState, addNotification]);
+    // Simulate connected state - polling handles data freshness
+    setWsConnected(true);
+    console.log('Polling mode active (WebSocket disabled for free tier)');
+  }, [setWsConnected]);
 
   const scheduleReconnect = useCallback(() => {
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-    reconnectTimeoutRef.current = setTimeout(() => {
-      connect();
-    }, 5000);
-  }, [connect]);
+    // No reconnect needed in polling mode
+  }, []);
 
   const disconnect = useCallback(() => {
-    if (wsRef.current?.unsubscribe) {
-      wsRef.current.unsubscribe();
-    }
-    api.disconnectWebSocket();
     setWsConnected(false);
-    if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
   }, [setWsConnected]);
 
   useEffect(() => {
@@ -267,7 +195,7 @@ export function useWebSocket() {
   }, [connect, disconnect]);
 
   const sendMessage = useCallback((message: any) => {
-    api.sendWebSocketMessage(message);
+    // No-op in polling mode
   }, []);
 
   return { wsConnected, connect, disconnect, sendMessage };
