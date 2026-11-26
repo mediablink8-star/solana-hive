@@ -3,6 +3,7 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
+import { Line } from '@react-three/drei';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge, Particle } from '@/types';
 import { useSpiderStore, useDataStore } from '@/store';
@@ -169,7 +170,7 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   sourcePos: [number, number, number];
   targetPos: [number, number, number];
 }) {
-  const lineRef = useRef<THREE.Line>(null);
+  const lineRef = useRef<any>(null);
   const { scene } = useThree();
   
   const midPoint = new THREE.Vector3()
@@ -219,7 +220,7 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   });
 
   return (
-    <line
+    <Line
       ref={lineRef}
       geometry={geometry}
       material={material}
