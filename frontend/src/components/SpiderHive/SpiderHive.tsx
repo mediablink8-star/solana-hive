@@ -3,7 +3,8 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES, SpiderNode, SpiderEdge, Particle } from '@/store';
+import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
+import type { SpiderNode, SpiderEdge, Particle } from '@/types';
 import { useSpiderStore, useDataStore } from '@/store';
 import { clsx } from 'clsx';
 
