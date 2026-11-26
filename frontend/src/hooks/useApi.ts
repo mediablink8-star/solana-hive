@@ -162,11 +162,15 @@ export function useValidation() {
   return { fetchStatus, fetchReport, fetchReconciliation, fetchHeartbeat, fetchUptime };
 }
 
+interface WSConnection {
+  unsubscribe: () => void;
+}
+
 export function useWebSocket() {
   const { wsConnected, setWsConnected, addWsMessage } = useDataStore();
   const { agents, updateAgentState } = useDataStore();
   const { addNotification } = useUIStore();
-  const wsRef = useRef<ReturnType<typeof api.connectWebSocket> | null>(null);
+  const wsRef = useRef<WSConnection | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const connect = useCallback(async () => {
