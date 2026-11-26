@@ -104,7 +104,7 @@ export default function TokenScannerPage() {
             <p className="text-2xl font-bold font-mono text-gradient-cyan">{tokens.length}</p>
           </div>
           <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">High Liquidity (>100k)</p>
+            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">High Liquidity (100k+)</p>
             <p className="text-2xl font-bold font-mono text-green">
               {tokens.filter(t => (t.liquidity || 0) >= 100000).length}
             </p>
