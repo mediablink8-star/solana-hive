@@ -99,17 +99,17 @@ function NodeMesh({ node, isJarvis, onClick, onHover, onHoverEnd }: {
     meshRef.current.position.y = node.position[1] + floatOffset;
   });
 
-  const handleClick = (event: React.MouseEvent<THREE.Mesh>) => {
+  const handleClick = (event: any) => {
     event.stopPropagation();
     onClick();
   };
 
-  const handlePointerOver = (event: React.PointerEvent<THREE.Mesh>) => {
+  const handlePointerOver = (event: any) => {
     event.stopPropagation();
     onHover();
   };
 
-  const handlePointerOut = (event: React.PointerEvent<THREE.Mesh>) => {
+  const handlePointerOut = (event: any) => {
     event.stopPropagation();
     onHoverEnd();
   };
