@@ -34,6 +34,7 @@ const agents = [
 const stmt = db.prepare("INSERT OR REPLACE INTO agents (id,name,role,status) VALUES (?,?,?,?)");
 for (const a of agents) stmt.run(...a);
 
+app.get("/", (req, res) => res.json({ status: "ok", service: "solana-hive-backend", time: new Date().toISOString() }));
 app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 app.get("/agents", (req, res) => res.json(db.prepare("SELECT * FROM agents").all()));
 app.get("/tokens", (req, res) => res.json(db.prepare("SELECT * FROM tokens").all()));
