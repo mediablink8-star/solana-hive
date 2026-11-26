@@ -416,10 +416,23 @@ export function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNo
   // Sync agent states to spider nodes
   useEffect(() => {
     const state = useSpiderStore.getState();
+    
+    const mapAgentStatusToNodeState = (status: string): SpiderNode['state'] => {
+      switch (status) {
+        case 'analyzing': return 'thinking';
+        case 'communicating': return 'communicating';
+        case 'approving': return 'approving';
+        case 'rejecting': return 'rejecting';
+        case 'executing': return 'executing';
+        default: return 'idle';
+      }
+    };
+    
     agents.forEach(agent => {
       const node = state.nodes.find(n => n.id === agent.id);
-      if (node && node.state !== agent.status) {
-        state.updateNodeState(agent.id, agent.status);
+      const mappedState = mapAgentStatusToNodeState(agent.status);
+      if (node && node.state !== mappedState) {
+        state.updateNodeState(agent.id, mappedState);
       }
     });
   }, [agents]);
