@@ -5,6 +5,15 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 const app = express();
 app.use(express.json());
 
+// CORS for Vercel frontend
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
+
 // Simple JSON file database
 const DB_FILE = "solana_hive.json";
 

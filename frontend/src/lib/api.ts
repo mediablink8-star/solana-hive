@@ -17,8 +17,8 @@ import type {
   LedgerEntry,
 } from '@/types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000';
-const WS_BASE = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:4000';
+const API_BASE = 'https://solana-hive-api.onrender.com';
+const WS_BASE = 'wss://solana-hive-api.onrender.com';
 
 class ApiClient {
   private baseUrl: string;
