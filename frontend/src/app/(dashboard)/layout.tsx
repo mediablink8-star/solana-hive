@@ -1,4 +1,6 @@
-import { MainLayout } from '@/components/Layout';
+'use client';
+
+import { MainLayout } from '@/components/Layout/MainLayout';
 import { useTokens, useAgents, useDecisions, usePortfolio, useValidation, useWebSocket, usePerformance, useAnalysisCycle } from '@/hooks/useApi';
 
 export default function DashboardLayout({
