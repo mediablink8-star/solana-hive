@@ -3,7 +3,6 @@
 import React, { useRef, useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { Line } from '@react-three/drei';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge, Particle } from '@/types';
 import { useSpiderStore, useDataStore } from '@/store';
@@ -188,11 +187,7 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   );
 
   const points = curve.getPoints(32);
-  const geometry = useMemo(() => {
-    const g = new THREE.LineGeometry();
-    g.setPositions(points.flatMap(p => [p.x, p.y, p.z]));
-    return g;
-  }, []);
+  const geometry = useMemo(() => new THREE.BufferGeometry().setFromPoints(points), []);
   
   const sourceNode = useSpiderStore.getState().nodes.find(n => n.id === edge.source);
   const targetNode = useSpiderStore.getState().nodes.find(n => n.id === edge.target);
@@ -200,18 +195,20 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   const targetColor = targetNode ? colors[targetNode.color] : new THREE.Color(0xb87dff);
 
   const material = useMemo(() => 
-    new THREE.LineMaterial({
+    new THREE.LineDashedMaterial({
       color: sourceColor,
       dashSize: 0.5,
       gapSize: 0.3,
       transparent: true,
       opacity: 0.3 + edge.intensity * 0.5,
       linewidth: 2,
-      dashed: true,
     }),
     [sourceColor, edge.intensity]
   );
 
+  const lineObject = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
+  lineObject.computeLineDistances();
+  
   useFrame((_, delta) => {
     if (!lineRef.current) return;
     
@@ -225,11 +222,9 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   });
 
   return (
-    <Line
+    <primitive
       ref={lineRef}
-      geometry={geometry}
-      material={material}
-      computeLineDistances
+      object={lineObject}
     />
   );
 }
