@@ -35,7 +35,7 @@ interface DataState {
   setWsConnected: (connected: boolean) => void;
   addWsMessage: (message: WebSocketMessage) => void;
   setLastUpdate: (timestamp: number) => void;
-  updateAgentState: (agentId: string, state: Agent['state'], task?: string) => void;
+  updateAgentState: (agentId: string, state: Agent['status'], task?: string) => void;
 }
 
 interface SpiderState {
