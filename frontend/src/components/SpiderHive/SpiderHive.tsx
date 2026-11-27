@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
@@ -724,12 +724,10 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
             </React.Fragment>
           );
         })}
-      <Html fullscreen>
-        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
-        <StateIndicatorsOverlay nodes={nodes} />
-      </Html>
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
+        <StateIndicatorsOverlay nodes={nodes} camera={useThree().camera} />
 
-      <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
+        <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-hive-text font-semibold">NODES</span>
           {nodes.map(node => (
@@ -749,24 +747,29 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
   );
 }
 
-function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
-  const { camera } = useThree();
+function NodeLabelsOverlay({ nodes, onNodeClick, camera }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void; camera: THREE.Camera }) {
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-    nodes.forEach(node => {
-      const vector = new THREE.Vector3(...node.position);
-      const pos = vector.clone().project(camera);
-      newPositions[node.id] = {
-        x: (pos.x * 0.5 + 0.5) * window.innerWidth,
-        y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
-        visible: pos.z < 1,
-      };
-    });
-    setPositions(newPositions);
-  });
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera]);
 
   return (
     <>
@@ -799,24 +802,29 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
   );
 }
 
-function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
-  const { camera } = useThree();
+function StateIndicatorsOverlay({ nodes, camera }: { nodes: SpiderNode[]; camera: THREE.Camera }) {
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-    nodes.forEach(node => {
-      const vector = new THREE.Vector3(...node.position);
-      const pos = vector.clone().project(camera);
-      newPositions[node.id] = {
-        x: (pos.x * 0.5 + 0.5) * window.innerWidth,
-        y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
-        visible: pos.z < 1,
-      };
-    });
-    setPositions(newPositions);
-  });
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera]);
 
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
@@ -1050,12 +1058,10 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </React.Fragment>
           );
         })}
-      <Html fullscreen>
-        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
-        <StateIndicatorsOverlay nodes={nodes} />
-      </Html>
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
+        <StateIndicatorsOverlay nodes={nodes} camera={useThree().camera} />
 
-      <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
+        <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-hive-text font-semibold">NODES</span>
           {nodes.map(node => (
