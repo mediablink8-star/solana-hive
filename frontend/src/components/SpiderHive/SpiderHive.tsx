@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
@@ -724,12 +724,10 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
             </React.Fragment>
           );
         })}
-      </Canvas>
-
-      <div className="absolute inset-0 pointer-events-none">
+      <Html fullscreen>
         <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
         <StateIndicatorsOverlay nodes={nodes} />
-      </div>
+      </Html>
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1052,12 +1050,10 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </React.Fragment>
           );
         })}
-      </Canvas>
-
-      <div className="absolute inset-0 pointer-events-none">
+      <Html fullscreen>
         <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
         <StateIndicatorsOverlay nodes={nodes} />
-      </div>
+      </Html>
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
