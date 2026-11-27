@@ -746,7 +746,7 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
   );
 }
 
-function NodeLabelsOverlay({ nodes, onNodeClick, positions }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
+const NodeLabelsOverlay = React.memo(function NodeLabelsOverlay({ nodes, onNodeClick, positions }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
   return (
     <>
       {nodes.map(node => {
@@ -776,9 +776,9 @@ function NodeLabelsOverlay({ nodes, onNodeClick, positions }: { nodes: SpiderNod
       })}
     </>
   );
-}
+});
 
-function StateIndicatorsOverlay({ nodes, positions }: { nodes: SpiderNode[]; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
+const StateIndicatorsOverlay = React.memo(function StateIndicatorsOverlay({ nodes, positions }: { nodes: SpiderNode[]; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
     active: 'ACTIVE',
@@ -820,31 +820,28 @@ function StateIndicatorsOverlay({ nodes, positions }: { nodes: SpiderNode[]; pos
       })}
     </>
   );
-}
+});
 
 function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
   const { camera } = useThree();
-  const [labelPositions, setLabelPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
-  const [statePositions, setStatePositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
+  const positionsRef = React.useRef<Record<string, { x: number; y: number; visible: boolean }>>({});
+  const [, setTick] = useState(0);
   
   useEffect(() => {
     const updatePositions = () => {
       if (typeof window === 'undefined') return;
-      const newLabelPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-      const newStatePositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
       nodes.forEach(node => {
         const vector = new THREE.Vector3(...node.position);
         const pos = vector.clone().project(camera);
-        const positionData = {
+        newPositions[node.id] = {
           x: (pos.x * 0.5 + 0.5) * window.innerWidth,
           y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
           visible: pos.z < 1,
         };
-        newLabelPositions[node.id] = positionData;
-        newStatePositions[node.id] = positionData;
       });
-      setLabelPositions(newLabelPositions);
-      setStatePositions(newStatePositions);
+      positionsRef.current = newPositions;
+      setTick(t => t + 1);
     };
     
     updatePositions();
@@ -852,10 +849,12 @@ function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeCli
     return () => clearInterval(interval);
   }, [nodes, camera]);
 
+  const positions = positionsRef.current;
+
   return (
     <>
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} positions={labelPositions} />
-      <StateIndicatorsOverlay nodes={nodes} positions={statePositions} />
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} positions={positions} />
+      <StateIndicatorsOverlay nodes={nodes} positions={positions} />
     </>
   );
 }
