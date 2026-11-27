@@ -1077,9 +1077,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
               </span>
             </span>
           ))}
-        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
-<StateIndicatorsOverlay nodes={nodes} />
-      </div>
+        </div>
     </div>
   );
 }
