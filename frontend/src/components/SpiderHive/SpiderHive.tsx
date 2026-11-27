@@ -1029,72 +1029,71 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
 
   return (
     <div className="relative w-full h-full">
-      <CameraProvider>
-        <Canvas
-          camera={{ position: cameraPosition, fov: 50, near: 0.1, far: 200 }}
-          style={{ width: '100%', height: '100%', display: 'block' }}
-          gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
-          shadows={false}
-          onCreated={({ gl }) => {
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.2;
-          }}
-        >
-          <color attach="background" args={['#03050a']} />
-          <fog attach="fog" args={['#03050a', 40, 150]} />
+      <Canvas
+        camera={{ position: cameraPosition, fov: 50, near: 0.1, far: 200 }}
+        style={{ width: '100%', height: '100%', display: 'block' }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
+        shadows={false}
+        onCreated={({ gl }) => {
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.2;
+        }}
+      >
+        <color attach="background" args={['#03050a']} />
+        <fog attach="fog" args={['#03050a', 40, 150]} />
+        
+        <ambientLight intensity={0.6} color="#0a1528" />
+        <directionalLight position={[30, 40, 30]} intensity={1.0} color="#00e5ff" />
+        <directionalLight position={[-30, -40, -30]} intensity={0.6} color="#b87dff" />
+        <pointLight position={[0, 0, 0]} color="#00e5ff" intensity={1.0} distance={80} decay={2} />
+        <pointLight position={[0, 20, 0]} color="#b87dff" intensity={0.5} distance={60} decay={2} />
+        
+        <gridHelper args={[100, 20, '#00e5ff15', '#b87dff15']} position={[0, -35, 0]} />
+        
+        <OrbitControls 
+          enableDamping={true}
+          dampingFactor={0.05}
+          enablePan={true}
+          enableZoom={true}
+          enableRotate={true}
+          minDistance={20}
+          maxDistance={150}
+          minPolarAngle={0}
+          maxPolarAngle={Math.PI}
+          autoRotate={false}
+          autoRotateSpeed={0.5}
+        />
+        
+        {edges.map((edge, idx) => {
+          const sourceNode = nodes.find(n => n.id === edge.source);
+          const targetNode = nodes.find(n => n.id === edge.target);
+          if (!sourceNode || !targetNode) return null;
           
-          <ambientLight intensity={0.6} color="#0a1528" />
-          <directionalLight position={[30, 40, 30]} intensity={1.0} color="#00e5ff" />
-          <directionalLight position={[-30, -40, -30]} intensity={0.6} color="#b87dff" />
-          <pointLight position={[0, 0, 0]} color="#00e5ff" intensity={1.0} distance={80} decay={2} />
-          <pointLight position={[0, 20, 0]} color="#b87dff" intensity={0.5} distance={60} decay={2} />
-          
-          <gridHelper args={[100, 20, '#00e5ff15', '#b87dff15']} position={[0, -35, 0]} />
-          
-          <OrbitControls 
-            enableDamping={true}
-            dampingFactor={0.05}
-            enablePan={true}
-            enableZoom={true}
-            enableRotate={true}
-            minDistance={20}
-            maxDistance={150}
-            minPolarAngle={0}
-            maxPolarAngle={Math.PI}
-            autoRotate={false}
-            autoRotateSpeed={0.5}
-          />
-          
-          {edges.map((edge, idx) => {
-            const sourceNode = nodes.find(n => n.id === edge.source);
-            const targetNode = nodes.find(n => n.id === edge.target);
-            if (!sourceNode || !targetNode) return null;
-            
-            return (
-              <React.Fragment key={`edge-${idx}`}>
-                <EdgeLine edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
-                <Particles edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
-              </React.Fragment>
-            );
-          })}
-          
-          {nodes.map((node) => {
-            const isJarvis = node.id === 'jarvis';
-            return (
-              <React.Fragment key={node.id}>
-                <NodeMesh
-                  node={node}
-                  isJarvis={isJarvis}
-                  onClick={() => onNodeClick(node)}
-                  onHover={() => useSpiderStore.getState().setHoveredNode(node.id)}
-                  onHoverEnd={() => useSpiderStore.getState().setHoveredNode(null)}
-                />
-              </React.Fragment>
-            );
-          })}
-          <OverlayManager nodes={nodes} onNodeClick={onNodeClick} />
-        </Canvas>
-      </CameraProvider>
+          return (
+            <React.Fragment key={`edge-${idx}`}>
+              <EdgeLine edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
+              <Particles edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
+            </React.Fragment>
+          );
+        })}
+        
+        {nodes.map((node) => {
+          const isJarvis = node.id === 'jarvis';
+          return (
+            <React.Fragment key={node.id}>
+              <NodeMesh
+                node={node}
+                isJarvis={isJarvis}
+                onClick={() => onNodeClick(node)}
+                onHover={() => useSpiderStore.getState().setHoveredNode(node.id)}
+                onHoverEnd={() => useSpiderStore.getState().setHoveredNode(null)}
+              />
+            </React.Fragment>
+          );
+        })}
+        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
+        <StateIndicatorsOverlay nodes={nodes} />
+      </Canvas>
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
