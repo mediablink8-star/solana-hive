@@ -1,10 +1,23 @@
 'use client';
 
-import React from 'react';
-import { SpiderHive } from '@/components/SpiderHive';
+import React, { Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import { useTokens, useAgents, useDecisions, usePortfolio, useValidation, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import type { Token, AgentDecision, Position, Agent } from '@/types';
+
+const SpiderHive = dynamic(() => import('@/components/SpiderHive').then(mod => mod.SpiderHive), {
+  ssr: false,
+  loading: () => (
+    <div className="w-full h-[500px] lg:h-[600px] glass flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-12 h-12 border-2 border-cyan/50 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-hive-textMuted">Initializing Hive Network...</p>
+        <p className="text-hive-textDim text-xs mt-2">Loading JARVIS core and 8 specialist agents</p>
+      </div>
+    </div>
+  ),
+});
 
 const AGENT_ROLES: Record<string, string> = {
   'Token Scout': 'Market Discovery',
