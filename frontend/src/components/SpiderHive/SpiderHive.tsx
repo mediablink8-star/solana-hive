@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useMemo, useState, Suspense, createContext, useContext } from 'react';
+import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -8,26 +8,6 @@ import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
 import { useSpiderStore, useDataStore } from '@/store';
 import { clsx } from 'clsx';
-
-// Context to pass camera from inside Canvas to overlay components outside
-const CameraContext = createContext<THREE.Camera | null>(null);
-
-function CameraProvider({ children }: { children: React.ReactNode }) {
-  const { camera } = useThree();
-  return (
-    <CameraContext.Provider value={camera}>
-      {children}
-    </CameraContext.Provider>
-  );
-}
-
-function useCamera() {
-  const camera = useContext(CameraContext);
-  if (!camera) {
-    throw new Error('useCamera must be used within a CameraProvider');
-  }
-  return camera;
-}
 
 const NODE_RADIUS = 1.5;
 const JARVIS_RADIUS = 3;
@@ -766,39 +746,7 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
   );
 }
 
-const NodeLabelsOverlay = React.memo(function NodeLabelsOverlay({ nodes, onNodeClick, positions }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
-  return (
-    <>
-      {nodes.map(node => {
-        const pos = positions[node.id];
-        if (!pos || !pos.visible || typeof window === 'undefined') return null;
-        const isJarvis = node.id === 'jarvis';
-        return (
-          <div
-            key={node.id}
-            className={clsx(
-              'fixed pointer-events-none z-10 transition-all duration-300',
-              'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
-              isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
-              'whitespace-nowrap'
-            )}
-            style={{
-              left: pos.x,
-              top: pos.y - (isJarvis ? 50 : 30),
-              transform: 'translate(-50%, -100%)',
-            }}
-            onClick={() => onNodeClick(node)}
-          >
-            {node.name}
-            <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
-          </div>
-        );
-      })}
-    </>
-  );
-});
-
-const StateIndicatorsOverlay = React.memo(function StateIndicatorsOverlay({ nodes, positions }: { nodes: SpiderNode[]; positions: Record<string, { x: number; y: number; visible: boolean }> }) {
+function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
     active: 'ACTIVE',
@@ -822,59 +770,81 @@ const StateIndicatorsOverlay = React.memo(function StateIndicatorsOverlay({ node
   return (
     <>
       {nodes.map(node => {
-        const pos = positions[node.id];
-        if (!pos || !pos.visible || typeof window === 'undefined') return null;
+        const isJarvis = node.id === 'jarvis';
         return (
-          <div
+          <Html
             key={node.id}
-            className={`fixed pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
+            position={node.position}
+            center
+            occlude
+            onClick={() => onNodeClick(node)}
             style={{
-              left: pos.x,
-              top: pos.y - 35,
+              pointerEvents: 'auto',
               transform: 'translate(-50%, -100%)',
             }}
+            className={clsx(
+              'pointer-events-auto z-10 transition-all duration-300',
+              'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
+              isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
+              'whitespace-nowrap'
+            )}
           >
-            {stateLabels[node.state]}
-          </div>
+            {node.name}
+            <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
+          </Html>
         );
       })}
     </>
   );
-});
+}
 
-function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
-  const camera = useCamera();
-  const positionsRef = React.useRef<Record<string, { x: number; y: number; visible: boolean }>>({});
-  const [, setTick] = useState(0);
-  
-  useEffect(() => {
-    const updatePositions = () => {
-      if (typeof window === 'undefined') return;
-      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-      nodes.forEach(node => {
-        const vector = new THREE.Vector3(...node.position);
-        const pos = vector.clone().project(camera);
-        newPositions[node.id] = {
-          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
-          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
-          visible: pos.z < 1,
-        };
-      });
-      positionsRef.current = newPositions;
-      setTick(t => t + 1);
-    };
-    
-    updatePositions();
-    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
-    return () => clearInterval(interval);
-  }, [nodes, camera]);
+function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
+  const stateLabels: Record<string, string> = {
+    idle: 'IDLE',
+    active: 'ACTIVE',
+    thinking: 'THINKING',
+    communicating: 'COMM',
+    approving: 'APPROVE',
+    rejecting: 'REJECT',
+    executing: 'EXEC',
+  };
 
-  const positions = positionsRef.current;
+  const stateColors: Record<string, string> = {
+    idle: 'hive-textDim',
+    active: 'hive-cyan',
+    thinking: 'hive-purple',
+    communicating: 'hive-green',
+    approving: 'hive-green',
+    rejecting: 'hive-red',
+    executing: 'hive-orange',
+  };
 
   return (
     <>
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} positions={positions} />
-      <StateIndicatorsOverlay nodes={nodes} positions={positions} />
+      {nodes.map(node => (
+        <Html
+          key={node.id}
+          position={node.position}
+          center
+          occlude
+          style={{
+            pointerEvents: 'none',
+            transform: 'translate(-50%, -100%)',
+          }}
+          className={`pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
+        >
+          {stateLabels[node.state]}
+        </Html>
+      ))}
+    </>
+  );
+}
+
+function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
+  return (
+    <>
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
+      <StateIndicatorsOverlay nodes={nodes} />
     </>
   );
 }
@@ -1112,9 +1082,9 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
               </React.Fragment>
             );
           })}
+          <OverlayManager nodes={nodes} onNodeClick={onNodeClick} />
         </Canvas>
       </CameraProvider>
-      <OverlayManager nodes={nodes} onNodeClick={onNodeClick} />
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
