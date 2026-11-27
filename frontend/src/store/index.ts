@@ -56,105 +56,7 @@ interface SpiderState {
   setCameraTarget: (target: [number, number, number]) => void;
 }
 
-export const useUIStore = create<UIState>()(
-  persist(
-    (set) => ({
-      activeTab: 'command-center',
-      sidebarOpen: true,
-      commandPaletteOpen: false,
-      notifications: [],
-      setActiveTab: (tab) => set({ activeTab: tab }),
-      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
-      openCommandPalette: () => set({ commandPaletteOpen: true }),
-      closeCommandPalette: () => set({ commandPaletteOpen: false }),
-      addNotification: (notification) =>
-        set((state) => ({
-          notifications: [
-            ...state.notifications,
-            { ...notification, id: crypto.randomUUID(), timestamp: Date.now() },
-          ].slice(-50),
-        })),
-      removeNotification: (id) =>
-        set((state) => ({
-          notifications: state.notifications.filter((n) => n.id !== id),
-        })),
-    }),
-    { name: 'solana-hive-ui', partialize: (state) => ({ activeTab: state.activeTab, sidebarOpen: state.sidebarOpen }) }
-  )
-);
-
-export const useDataStore = create<DataState>()(
-  persist(
-    (set) => ({
-      tokens: [],
-      agents: [],
-      decisions: [],
-      positions: [],
-      portfolio: null,
-      portfolioConfig: null,
-      wsConnected: false,
-      wsMessages: [],
-      lastUpdate: null,
-      setTokens: (tokens) => set({ tokens, lastUpdate: Date.now() }),
-      setAgents: (agents) => set({ agents, lastUpdate: Date.now() }),
-      setDecisions: (decisions) => set({ decisions, lastUpdate: Date.now() }),
-      setPositions: (positions) => set({ positions, lastUpdate: Date.now() }),
-      setPortfolio: (portfolio) => set({ portfolio, lastUpdate: Date.now() }),
-      setPortfolioConfig: (config) => set({ portfolioConfig: config, lastUpdate: Date.now() }),
-      setWsConnected: (connected) => set({ wsConnected: connected }),
-      addWsMessage: (message) =>
-        set((state) => ({
-          wsMessages: [...state.wsMessages.slice(-99), message],
-        })),
-      setLastUpdate: (timestamp) => set({ lastUpdate: timestamp }),
-      updateAgentState: (agentId, state, task) =>
-        set((s) => ({
-          agents: s.agents.map((a) =>
-            a.id === agentId ? { ...a, status: state, currentTask: task ?? a.currentTask } : a
-          ),
-        })),
-    }),
-    { name: 'solana-hive-data', partialize: (state) => ({}) }
-  )
-);
-
-export const useSpiderStore = create<SpiderState>((set) => ({
-  nodes: [],
-  edges: [],
-  selectedNode: null,
-  hoveredNode: null,
-  cameraPosition: [0, 0, 50],
-  cameraTarget: [0, 0, 0],
-  setNodes: (nodes) => set({ nodes }),
-  setEdges: (edges) => set({ edges }),
-  updateNodeState: (nodeId, state, pulseIntensity = 1) =>
-    set((s) => ({
-      nodes: s.nodes.map((n) =>
-        n.id === nodeId ? { ...n, state, pulseIntensity } : n
-      ),
-    })),
-  updateEdgeIntensity: (source, target, intensity) =>
-    set((s) => ({
-      edges: s.edges.map((e) =>
-        e.source === source && e.target === target ? { ...e, intensity } : e
-      ),
-    })),
-  addEdgeParticle: (source, target, particle) =>
-    set((s) => ({
-      edges: s.edges.map((e) =>
-        e.source === source && e.target === target
-          ? { ...e, particles: [...e.particles.slice(-19), particle] }
-          : e
-      ),
-    })),
-  setSelectedNode: (id) => set({ selectedNode: id }),
-  setHoveredNode: (id) => set({ hoveredNode: id }),
-  setCameraPosition: (position) => set({ cameraPosition: position }),
-  setCameraTarget: (target) => set({ cameraTarget: target }),
-}));
-
-// Initial spider network configuration
+// Initial spider network configuration - defined BEFORE store creation to avoid TDZ
 export const INITIAL_SPIDER_NODES: SpiderNode[] = [
   {
     id: 'jarvis',
@@ -268,3 +170,101 @@ export const INITIAL_SPIDER_EDGES: SpiderEdge[] = [
   { source: 'risk-manager', target: 'execution-trader', particles: [], intensity: 0 },
   { source: 'execution-trader', target: 'portfolio-manager', particles: [], intensity: 0 },
 ];
+
+export const useUIStore = create<UIState>()(
+  persist(
+    (set) => ({
+      activeTab: 'command-center',
+      sidebarOpen: true,
+      commandPaletteOpen: false,
+      notifications: [],
+      setActiveTab: (tab) => set({ activeTab: tab }),
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      openCommandPalette: () => set({ commandPaletteOpen: true }),
+      closeCommandPalette: () => set({ commandPaletteOpen: false }),
+      addNotification: (notification) =>
+        set((state) => ({
+          notifications: [
+            ...state.notifications,
+            { ...notification, id: crypto.randomUUID(), timestamp: Date.now() },
+          ].slice(-50),
+        })),
+      removeNotification: (id) =>
+        set((state) => ({
+          notifications: state.notifications.filter((n) => n.id !== id),
+        })),
+    }),
+    { name: 'solana-hive-ui', partialize: (state) => ({ activeTab: state.activeTab, sidebarOpen: state.sidebarOpen }) }
+  )
+);
+
+export const useDataStore = create<DataState>()(
+  persist(
+    (set) => ({
+      tokens: [],
+      agents: [],
+      decisions: [],
+      positions: [],
+      portfolio: null,
+      portfolioConfig: null,
+      wsConnected: false,
+      wsMessages: [],
+      lastUpdate: null,
+      setTokens: (tokens) => set({ tokens, lastUpdate: Date.now() }),
+      setAgents: (agents) => set({ agents, lastUpdate: Date.now() }),
+      setDecisions: (decisions) => set({ decisions, lastUpdate: Date.now() }),
+      setPositions: (positions) => set({ positions, lastUpdate: Date.now() }),
+      setPortfolio: (portfolio) => set({ portfolio, lastUpdate: Date.now() }),
+      setPortfolioConfig: (config) => set({ portfolioConfig: config, lastUpdate: Date.now() }),
+      setWsConnected: (connected) => set({ wsConnected: connected }),
+      addWsMessage: (message) =>
+        set((state) => ({
+          wsMessages: [...state.wsMessages.slice(-99), message],
+        })),
+      setLastUpdate: (timestamp) => set({ lastUpdate: timestamp }),
+      updateAgentState: (agentId, state, task) =>
+        set((s) => ({
+          agents: s.agents.map((a) =>
+            a.id === agentId ? { ...a, status: state, currentTask: task ?? a.currentTask } : a
+          ),
+        })),
+    }),
+    { name: 'solana-hive-data', partialize: (state) => ({}) }
+  )
+);
+
+export const useSpiderStore = create<SpiderState>((set) => ({
+  nodes: INITIAL_SPIDER_NODES,
+  edges: INITIAL_SPIDER_EDGES,
+  selectedNode: null,
+  hoveredNode: null,
+  cameraPosition: [0, 0, 85],
+  cameraTarget: [0, 0, 0],
+  setNodes: (nodes) => set({ nodes }),
+  setEdges: (edges) => set({ edges }),
+  updateNodeState: (nodeId, state, pulseIntensity = 1) =>
+    set((s) => ({
+      nodes: s.nodes.map((n) =>
+        n.id === nodeId ? { ...n, state, pulseIntensity } : n
+      ),
+    })),
+  updateEdgeIntensity: (source, target, intensity) =>
+    set((s) => ({
+      edges: s.edges.map((e) =>
+        e.source === source && e.target === target ? { ...e, intensity } : e
+      ),
+    })),
+  addEdgeParticle: (source, target, particle) =>
+    set((s) => ({
+      edges: s.edges.map((e) =>
+        e.source === source && e.target === target
+          ? { ...e, particles: [...e.particles.slice(-19), particle] }
+          : e
+      ),
+    })),
+  setSelectedNode: (id) => set({ selectedNode: id }),
+  setHoveredNode: (id) => set({ hoveredNode: id }),
+  setCameraPosition: (position) => set({ cameraPosition: position }),
+  setCameraTarget: (target) => set({ cameraTarget: target }),
+}));

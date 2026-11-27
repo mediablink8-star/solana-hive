@@ -4,6 +4,8 @@ import React, { useState, useMemo } from 'react';
 import { useTokens, useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
 import type { Token } from '@/types';
+import { TokenPriceChart } from '@/components/Charts';
+import type { UTCTimestamp } from 'lightweight-charts';
 
 export default function TokenScannerPage() {
   const { tokens, refetch } = useTokens();
@@ -11,9 +13,16 @@ export default function TokenScannerPage() {
   const [search, setSearch] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof Token; direction: 'asc' | 'desc' } | null>(null);
   const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [showUnknown, setShowUnknown] = useState(false);
+
+  // Filter out UNKNOWN tokens by default
+  const validTokens = useMemo(() => 
+    tokens.filter(t => t.symbol !== 'UNKNOWN' || showUnknown),
+    [tokens, showUnknown]
+  );
 
   const filteredTokens = useMemo(() => {
-    let result = tokens;
+    let result = validTokens;
     
     if (search) {
       const searchLower = search.toLowerCase();
@@ -42,7 +51,7 @@ export default function TokenScannerPage() {
     }
 
     return result;
-  }, [tokens, search, sortConfig]);
+  }, [validTokens, search, sortConfig]);
 
   const handleSort = (key: keyof Token) => {
     setSortConfig(prev => ({
@@ -64,6 +73,34 @@ export default function TokenScannerPage() {
     if (liquidity >= 1e5) return 'text-yellow';
     if (liquidity >= 1e4) return 'text-orange';
     return 'text-red';
+  };
+
+  // Generate mock candlestick data for selected token
+  const generateMockCandles = (token: Token) => {
+    let basePrice = token.price || 0.0001;
+    const volatility = 0.05; // 5% volatility
+    const candles = [];
+    const now = Date.now();
+    
+    for (let i = 47; i >= 0; i--) {
+      const time = Math.floor((now - i * 30 * 60 * 1000) / 1000) as UTCTimestamp;
+      const change = (Math.random() - 0.5) * 2 * volatility;
+      const open = basePrice * (1 + (Math.random() - 0.5) * 0.02);
+      const close = open * (1 + change);
+      const high = Math.max(open, close) * (1 + Math.random() * 0.01);
+      const low = Math.min(open, close) * (1 - Math.random() * 0.01);
+      
+      candles.push({
+        time,
+        open,
+        high,
+        low,
+        close,
+      });
+      basePrice = close;
+    }
+    
+    return candles;
   };
 
   return (
@@ -96,21 +133,27 @@ export default function TokenScannerPage() {
         </div>
 
         {/* Stats Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <div className="glass p-4 rounded-2xl border border-hive-border/50">
             <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Total Discovered</p>
-            <p className="text-2xl font-bold font-mono text-gradient-cyan">{tokens.length}</p>
+            <p className="text-2xl font-bold font-mono text-gradient-cyan">{validTokens.length}</p>
           </div>
           <div className="glass p-4 rounded-2xl border border-hive-border/50">
             <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">High Liquidity (100k+)</p>
             <p className="text-2xl font-bold font-mono text-green">
-              {tokens.filter(t => (t.liquidity || 0) >= 100000).length}
+              {validTokens.filter(t => (t.liquidity || 0) >= 100000).length}
             </p>
           </div>
           <div className="glass p-4 rounded-2xl border border-hive-border/50">
             <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Avg Liquidity</p>
             <p className="text-2xl font-bold font-mono text-cyan">
-              ${formatNumber(tokens.reduce((sum, t) => sum + (t.liquidity || 0), 0) / (tokens.length || 1))}
+              ${formatNumber(validTokens.reduce((sum, t) => sum + (t.liquidity || 0), 0) / (validTokens.length || 1))}
+            </p>
+          </div>
+          <div className="glass p-4 rounded-2xl border border-hive-border/50">
+            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Unknown Filtered</p>
+            <p className="text-2xl font-bold font-mono text-hive-textDim">
+              {tokens.length - validTokens.length}
             </p>
           </div>
           <div className="glass p-4 rounded-2xl border border-hive-border/50">
@@ -137,27 +180,42 @@ export default function TokenScannerPage() {
                 className="w-full glass rounded-xl px-10 py-3 text-hive-text placeholder-hive-textDim border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
               />
             </div>
-            <div className="flex items-center gap-3">
-              <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Sort:</label>
-              <select
-                value={sortConfig ? `${sortConfig.key}-${sortConfig.direction}` : ''}
-                onChange={(e) => {
-                  const [key, direction] = e.target.value.split('-');
-                  if (key) setSortConfig({ key: key as keyof Token, direction: direction as 'asc' | 'desc' });
-                  else setSortConfig(null);
-                }}
-                className="glass rounded-xl px-3 py-2 text-sm text-hive-text border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
-              >
-                <option value="">Default</option>
-                <option value="symbol-asc">Symbol A-Z</option>
-                <option value="symbol-desc">Symbol Z-A</option>
-                <option value="price-asc">Price Low-High</option>
-                <option value="price-desc">Price High-Low</option>
-                <option value="liquidity-asc">Liquidity Low-High</option>
-                <option value="liquidity-desc">Liquidity High-Low</option>
-                <option value="updated_at-asc">Oldest First</option>
-                <option value="updated_at-desc">Newest First</option>
-              </select>
+            <div className="flex items-center gap-3 flex-wrap">
+              <label className="flex items-center gap-2 text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showUnknown}
+                  onChange={(e) => setShowUnknown(e.target.checked)}
+                  className="w-4 h-4 rounded border-hive-border/50 bg-hive-bg text-cyan focus:ring-cyan/50"
+                />
+                Show UNKNOWN
+              </label>
+              <div className="flex items-center gap-2">
+                <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Sort:</label>
+                <select
+                  value={sortConfig ? `${sortConfig.key}-${sortConfig.direction}` : ''}
+                  onChange={(e) => {
+                    const [key, direction] = e.target.value.split('-');
+                    if (key) setSortConfig({ key: key as keyof Token, direction: direction as 'asc' | 'desc' });
+                    else setSortConfig(null);
+                  }}
+                  className="glass rounded-xl px-3 py-2 text-sm text-hive-text border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
+                >
+                  <option value="">Default</option>
+                  <option value="symbol-asc">Symbol A-Z</option>
+                  <option value="symbol-desc">Symbol Z-A</option>
+                  <option value="price-asc">Price Low-High</option>
+                  <option value="price-desc">Price High-Low</option>
+                  <option value="liquidity-asc">Liquidity Low-High</option>
+                  <option value="liquidity-desc">Liquidity High-Low</option>
+                  <option value="volume24h-asc">Volume Low-High</option>
+                  <option value="volume24h-desc">Volume High-Low</option>
+                  <option value="priceChange24h-asc">24h Change Low-High</option>
+                  <option value="priceChange24h-desc">24h Change High-Low</option>
+                  <option value="updated_at-asc">Oldest First</option>
+                  <option value="updated_at-desc">Newest First</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
@@ -186,6 +244,7 @@ export default function TokenScannerPage() {
                   <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
                       onClick={() => handleSort('priceChange24h')}>
                     24h Change
+                    {sortConfig?.key === 'priceChange24h' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
                   </th>
                   <th className="px-5 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Mint</th>
                   <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
@@ -199,7 +258,7 @@ export default function TokenScannerPage() {
                 {filteredTokens.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-5 py-12 text-center text-hive-textDim">
-                      {tokens.length === 0 ? 'No tokens discovered yet. Scanner runs every 30 seconds.' : 'No tokens match your search criteria.'}
+                      {validTokens.length === 0 ? 'No tokens discovered yet. Scanner runs every 30 seconds.' : 'No tokens match your search criteria.'}
                     </td>
                   </tr>
                 ) : (
@@ -255,7 +314,7 @@ export default function TokenScannerPage() {
           {filteredTokens.length > 0 && (
             <div className="px-5 py-3 border-t border-hive-border/50 flex items-center justify-between">
               <span className="text-hive-textDim text-sm font-mono">
-                Showing {filteredTokens.length} of {tokens.length} tokens
+                Showing {filteredTokens.length} of {validTokens.length} tokens ({tokens.length} total)
               </span>
               <span className="text-hive-textDim text-xs">
                 Auto-refresh: 30s
@@ -271,7 +330,7 @@ export default function TokenScannerPage() {
                role="dialog"
                aria-modal="true"
                aria-label={`${selectedToken.symbol} details`}>
-            <div className="w-full max-w-2xl glass-strong border border-cyan/30 rounded-2xl overflow-hidden animate-slide-in"
+            <div className="w-full max-w-4xl glass-strong border border-cyan/30 rounded-2xl overflow-hidden animate-slide-in"
                  onClick={(e) => e.stopPropagation()}>
               <div className="px-6 py-4 border-b border-hive-border/50 flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -292,8 +351,18 @@ export default function TokenScannerPage() {
                   </svg>
                 </button>
               </div>
-              <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-                <div className="grid grid-cols-2 gap-4">
+              <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+                {/* Price Chart */}
+                <div className="glass rounded-xl border border-hive-border/50 p-4">
+                  <h4 className="font-semibold text-hive-text mb-3">Price Chart (48h - 30m intervals)</h4>
+                  <TokenPriceChart
+                    height={300}
+                    data={generateMockCandles(selectedToken)}
+                    symbol={selectedToken.symbol}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="glass rounded-xl p-4">
                     <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Current Price</p>
                     <p className="text-2xl font-bold font-mono text-gradient-cyan">${selectedToken.price?.toFixed(6) || '0'}</p>

@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { api, queryKeys } from '@/lib/api';
 import { useDataStore, useUIStore } from '@/store';
-import type { WebSocketMessage } from '@/types';
+import type { WebSocketMessage, Snapshot } from '@/types';
 
 export function useTokens() {
   const { tokens, setTokens, lastUpdate } = useDataStore();
@@ -239,4 +239,21 @@ export function usePerformance() {
   }, []);
 
   return { fetchAgentPerformance, fetchStrategyPerformance };
+}
+
+export function useSnapshots() {
+  const { setTokens } = useDataStore(); // Reuse tokens for snapshot storage or create separate
+  const { addNotification } = useUIStore();
+
+  const fetchSnapshots = useCallback(async () => {
+    try {
+      const data = await api.getSnapshots();
+      return data;
+    } catch (error) {
+      console.error('Failed to fetch snapshots:', error);
+      return [];
+    }
+  }, []);
+
+  return { fetchSnapshots };
 }

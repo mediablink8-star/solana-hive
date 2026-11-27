@@ -40,15 +40,17 @@ export function Header() {
   return (
     <header className={clsx(
       'fixed top-0 right-0 z-30 glass-strong border-b border-hive-border/50',
-      'flex items-center justify-between px-6 py-3',
+      'flex items-center justify-between px-4 py-3',
       'transition-all duration-300',
-      sidebarOpen ? 'left-72' : 'left-20'
+      'lg:px-6',
+      sidebarOpen ? 'lg:left-72' : 'lg:left-20',
+      'left-0'
     )}>
       {/* Left: Menu + Title */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <button
           onClick={toggleSidebar}
-          className="w-10 h-10 rounded-xl glass flex items-center justify-center text-hive-textMuted hover:text-cyan transition-colors border border-hive-border/50 hover:border-cyan/30"
+          className="w-10 h-10 rounded-xl glass flex items-center justify-center text-hive-textMuted hover:text-cyan transition-colors border border-hive-border/50 hover:border-cyan/30 lg:hidden"
           aria-label="Toggle sidebar"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -56,14 +58,29 @@ export function Header() {
           </svg>
         </button>
         
-        <div className="hidden md:block">
+        <button
+          onClick={toggleSidebar}
+          className="hidden lg:w-10 lg:h-10 lg:rounded-xl lg:glass lg:flex lg:items-center lg:justify-center lg:text-hive-textMuted lg:hover:text-cyan lg:transition-colors lg:border lg:border-hive-border/50 lg:hover:border-cyan/30"
+          aria-label="Toggle sidebar"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M3 12h18M3 6h18M3 18h18" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </button>
+        
+        <div className="hidden lg:block lg:ml-2">
           <h1 className="text-gradient-cyan font-display font-bold text-xl">SOLANA HIVE</h1>
           <p className="text-hive-textDim text-xs font-mono">AI Trading Command Center</p>
         </div>
+        
+        {/* Mobile title */}
+        <div className="lg:hidden flex-1 text-center">
+          <h1 className="text-gradient-cyan font-display font-bold text-lg">SOLANA HIVE</h1>
+        </div>
       </div>
 
-      {/* Center: Status Indicators */}
-      <div className="hidden lg:flex items-center gap-6">
+      {/* Center: Status Indicators (Desktop only) */}
+      <div className="hidden lg:flex items-center gap-4">
         {/* WebSocket Status */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-hive-border/50">
           <span className={clsx(
@@ -95,7 +112,7 @@ export function Header() {
       </div>
 
       {/* Right: Time + Commands */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 lg:gap-4">
         {/* Time */}
         <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-hive-border/50">
           <span className="font-mono text-hive-text text-sm tabular-nums">{formatTime(time)}</span>
@@ -108,7 +125,7 @@ export function Header() {
           className="w-10 h-10 rounded-xl glass flex items-center justify-center gap-2 text-hive-textMuted hover:text-cyan transition-colors border border-hive-border/50 hover:border-cyan/30"
           aria-label="Open command palette (⌘K)"
         >
-          <kbd className="text-xs font-mono px-1.5 py-0.5 rounded bg-hive-bg/50 border border-hive-border/30">⌘K</kbd>
+          <kbd className="text-xs font-mono px-1.5 py-0.5 rounded bg-hive-bg/50 border border-hive-border/30 hidden sm:block">⌘K</kbd>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

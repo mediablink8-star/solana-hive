@@ -210,10 +210,10 @@ function OpenPositionsList({ positions }: { positions: Position[] }) {
                     'text-sm font-mono font-semibold',
                     position.unrealized_pnl >= 0 ? 'text-green' : 'text-red'
                   )}>
-                    {position.unrealized_pnl >= 0 ? '+' : ''}{position.unrealized_pnl.toFixed(4)} SOL
-                    {' '}
-                    <span className="text-xs font-normal">({position.unrealized_pnl_pct?.toFixed(2)}%)</span>
-                  </span>
+                      {position.unrealized_pnl >= 0 ? '+' : ''}{position.unrealized_pnl.toFixed(4)} SOL
+                      {' '}
+                      <span className="text-xs font-normal">({position.unrealized_pnl_pct?.toFixed(2)}%)</span>
+                    </span>
                 )}
                 <span className="text-hive-textDim text-xs hidden md:block">
                   {new Date(position.created_at).toLocaleDateString()}
@@ -293,11 +293,11 @@ export default function CommandCenterPage() {
     return () => clearInterval(interval);
   }, [fetchStatus, fetchReport]);
 
-  const totalValue = portfolioConfig 
-    ? portfolioConfig.balance + positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0)
-    : 0;
-
-  const dailyPnl = positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+  // Calculate portfolio values correctly
+  const totalInvested = positions.reduce((sum, p) => sum + (p.sol_invested || 0), 0);
+  const totalUnrealizedPnl = positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
+  const totalPortfolioValue = (portfolioConfig?.balance || 0) + totalInvested + totalUnrealizedPnl;
+  const availableBalance = portfolioConfig?.balance || 0;
 
   return (
     <div className="space-y-6">
@@ -321,14 +321,14 @@ export default function CommandCenterPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="Total Portfolio Value"
-            value={`${totalValue.toFixed(4)} SOL`}
-            change={`${dailyPnl >= 0 ? '+' : ''}${dailyPnl.toFixed(4)} SOL today`}
-            trend={dailyPnl >= 0 ? 'up' : dailyPnl < 0 ? 'down' : 'neutral'}
+            value={`${totalPortfolioValue.toFixed(4)} SOL`}
+            change={`${totalUnrealizedPnl >= 0 ? '+' : ''}${totalUnrealizedPnl.toFixed(4)} SOL unrealized`}
+            trend={totalUnrealizedPnl >= 0 ? 'up' : totalUnrealizedPnl < 0 ? 'down' : 'neutral'}
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>}
           />
           <MetricCard
             label="Available Balance"
-            value={`${portfolioConfig?.balance.toFixed(4) || '0'} SOL`}
+            value={`${availableBalance.toFixed(4)} SOL`}
             change={`Max ${(portfolioConfig?.max_alloc || 0.1) * 100}% per position`}
             trend="neutral"
             icon={<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" strokeWidth="1.5" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-4" strokeWidth="1.5" /><path d="M3 11h18" strokeWidth="1.5" /></svg>}

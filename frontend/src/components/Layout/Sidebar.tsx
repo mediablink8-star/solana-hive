@@ -121,6 +121,15 @@ const ICONS: Record<string, React.ReactNode> = {
   ),
 };
 
+// Mobile bottom navigation tabs (top 5 most used)
+const MOBILE_TABS: TabConfig[] = [
+  { id: 'command-center', label: 'Command', icon: 'cpu', description: 'Main dashboard' },
+  { id: 'hive-network', label: 'Hive', icon: 'network', description: 'Spider hive' },
+  { id: 'token-scanner', label: 'Scanner', icon: 'search', description: 'Token scanner' },
+  { id: 'agent-hq', label: 'Agents', icon: 'users', description: 'Agent HQ' },
+  { id: 'settings', label: 'Settings', icon: 'settings', description: 'Configuration' },
+];
+
 export function Sidebar() {
   const pathname = usePathname();
   const { sidebarOpen, setSidebarOpen, activeTab, setActiveTab } = useUIStore();
@@ -138,60 +147,172 @@ export function Sidebar() {
   };
 
   return (
-    <aside
-      className={clsx(
-        'fixed left-0 top-0 z-40 h-full glass-strong border-r border-hive-border/50 transition-all duration-300',
-        'flex flex-col overflow-y-auto',
-        sidebarOpen ? 'w-72' : 'w-20'
-      )}
-      style={{ height: '100vh' }}
-    >
-      {/* Logo */}
-      <div className="flex items-center gap-3 p-4 border-b border-hive-border/50">
-        <div className="relative">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan to-purple flex items-center justify-center">
-            <svg className="w-6 h-6 text-hive-bg" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={clsx(
+          'hidden lg:fixed lg:left-0 lg:top-0 lg:z-40 lg:h-full glass-strong lg:border-r lg:border-hive-border/50 lg:transition-all lg:duration-300',
+          'lg:flex lg:flex-col lg:overflow-y-auto',
+          sidebarOpen ? 'lg:w-72' : 'lg:w-20'
+        )}
+        style={{ height: '100vh' }}
+        aria-label="Main navigation"
+      >
+        {/* Logo */}
+        <div className="lg:flex lg:items-center lg:gap-3 lg:p-4 lg:border-b lg:border-hive-border/50">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan to-purple lg:flex lg:items-center lg:justify-center">
+              <svg className="w-6 h-6 text-hive-bg" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green rounded-full border-2 border-hive-bg" />
           </div>
-          <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green rounded-full border-2 border-hive-bg" />
+          {sidebarOpen && (
+            <div className="lg:flex-1 lg:min-w-0">
+              <h1 className="text-gradient-cyan font-display font-bold text-lg truncate">SOLANA HIVE</h1>
+              <p className="text-hive-textDim text-xs font-mono truncate">AI Trading Command Center</p>
+            </div>
+          )}
         </div>
-        {sidebarOpen && (
+
+        {/* Navigation */}
+        <nav className="lg:flex-1 lg:p-3 lg:space-y-1 lg:overflow-y-auto" role="navigation" aria-label="Main navigation">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/${tab.id}`}
+              onClick={() => handleTabClick(tab.id)}
+              className={clsx(
+                'lg:w-full lg:flex lg:items-center lg:gap-3 lg:px-3 lg:py-2.5 lg:rounded-xl lg:transition-all lg:duration-200',
+                'lg:text-hive-textMuted lg:hover:text-hive-text',
+                'lg:focus:outline-none lg:focus:ring-2 lg:focus:ring-cyan/50 lg:focus:ring-offset-2 lg:focus:ring-offset-hive-bg',
+                isActive(tab.id)
+                  ? 'lg:bg-gradient-to-r lg:from-cyan/10 lg:to-purple/10 lg:text-cyan lg:border lg:border-cyan/30 lg:shadow-glow-cyan'
+                  : 'lg:hover:bg-hive-bgCardHover/50'
+              )}
+              title={sidebarOpen ? undefined : tab.description}
+              aria-current={isActive(tab.id) ? 'page' : undefined}
+            >
+              <span className="lg:flex-shrink-0" aria-hidden="true">{ICONS[tab.icon]}</span>
+              {sidebarOpen && (
+                <span className="lg:flex-1 lg:text-left lg:font-medium lg:truncate">{tab.label}</span>
+              )}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Status Bar */}
+        <div className="lg:p-3 lg:border-t lg:border-hive-border/50">
+          {sidebarOpen && (
+            <div className="lg:space-y-2">
+              <div className="lg:flex lg:items-center lg:gap-2 lg:text-xs">
+                <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
+                <span className="font-mono text-green">LIVE</span>
+                <span className="lg:flex-1 lg:text-hive-textDim">Paper Trading</span>
+              </div>
+              <div className="lg:flex lg:items-center lg:gap-2 lg:text-xs">
+                <span className="w-2 h-2 rounded-full bg-cyan animate-pulse" />
+                <span className="font-mono text-cyan">WS Connected</span>
+              </div>
+            </div>
+          )}
+          {!sidebarOpen && (
+            <div className="lg:flex lg:flex-col lg:items-center lg:gap-2">
+              <div className="w-2 h-2 rounded-full bg-green animate-pulse" title="Live" />
+              <div className="w-2 h-2 rounded-full bg-cyan animate-pulse" title="WebSocket Connected" />
+            </div>
+          )}
+        </div>
+
+        {/* Toggle Button */}
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className={clsx(
+            'lg:absolute lg:-right-2 lg:bottom-4 lg:z-10 lg:w-8 lg:h-8 lg:rounded-full lg:glass',
+            'lg:flex lg:items-center lg:justify-center lg:text-hive-textMuted lg:hover:text-cyan',
+            'lg:transition-all lg:duration-200 lg:border lg:border-hive-border/50',
+            sidebarOpen ? 'lg:rotate-180' : 'lg:rotate-0'
+          )}
+          aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+          aria-expanded={sidebarOpen}
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M15 18l-6-6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </aside>
+
+      {/* Mobile Overlay */}
+      <div
+        className={clsx(
+          'lg:hidden fixed inset-0 z-30 bg-black/50 backdrop-blur-sm transition-opacity duration-300',
+          sidebarOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        )}
+        onClick={() => setSidebarOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Mobile Sidebar Drawer */}
+      <aside
+        className={clsx(
+          'lg:hidden fixed left-0 top-0 z-40 h-full glass-strong border-r border-hive-border/50 transition-transform duration-300 ease-out',
+          'flex flex-col overflow-y-auto w-72',
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        )}
+        style={{ height: '100vh' }}
+        aria-label="Mobile navigation"
+      >
+        {/* Logo */}
+        <div className="flex items-center gap-3 p-4 border-b border-hive-border/50">
+          <div className="relative">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan to-purple flex items-center justify-center">
+              <svg className="w-6 h-6 text-hive-bg" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green rounded-full border-2 border-hive-bg" />
+          </div>
           <div className="flex-1 min-w-0">
             <h1 className="text-gradient-cyan font-display font-bold text-lg truncate">SOLANA HIVE</h1>
             <p className="text-hive-textDim text-xs font-mono truncate">AI Trading Command Center</p>
           </div>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 p-3 space-y-1 overflow-y-auto" role="navigation" aria-label="Main navigation">
-        {TABS.map((tab) => (
           <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
-            className={clsx(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200',
-              'text-hive-textMuted hover:text-hive-text',
-              'focus:outline-none focus:ring-2 focus:ring-cyan/50 focus:ring-offset-2 focus:ring-offset-hive-bg',
-              isActive(tab.id)
-                ? 'bg-gradient-to-r from-cyan/10 to-purple/10 text-cyan border border-cyan/30 shadow-glow-cyan'
-                : 'hover:bg-hive-bgCardHover/50'
-            )}
-            title={sidebarOpen ? undefined : tab.description}
-            aria-current={isActive(tab.id) ? 'page' : undefined}
+            onClick={() => setSidebarOpen(false)}
+            className="w-8 h-8 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-red transition-colors"
+            aria-label="Close sidebar"
           >
-            <span className="flex-shrink-0" aria-hidden="true">{ICONS[tab.icon]}</span>
-            {sidebarOpen && (
-              <span className="flex-1 text-left font-medium truncate">{tab.label}</span>
-            )}
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
+            </svg>
           </button>
-        ))}
-      </nav>
+        </div>
 
-      {/* Status Bar */}
-      <div className="p-3 border-t border-hive-border/50">
-        {sidebarOpen && (
+        {/* Navigation */}
+        <nav className="flex-1 p-3 space-y-1 overflow-y-auto" role="navigation" aria-label="Main navigation">
+          {TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/${tab.id}`}
+              onClick={() => { handleTabClick(tab.id); setSidebarOpen(false); }}
+              className={clsx(
+                'w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200',
+                'text-hive-textMuted hover:text-hive-text',
+                'focus:outline-none focus:ring-2 focus:ring-cyan/50 focus:ring-offset-2 focus:ring-offset-hive-bg',
+                isActive(tab.id)
+                  ? 'bg-gradient-to-r from-cyan/10 to-purple/10 text-cyan border border-cyan/30 shadow-glow-cyan'
+                  : 'hover:bg-hive-bgCardHover/50'
+              )}
+              aria-current={isActive(tab.id) ? 'page' : undefined}
+            >
+              <span className="flex-shrink-0" aria-hidden="true">{ICONS[tab.icon]}</span>
+              <span className="flex-1 text-left font-medium truncate">{tab.label}</span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* Status Bar */}
+        <div className="p-3 border-t border-hive-border/50">
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs">
               <span className="w-2 h-2 rounded-full bg-green animate-pulse" />
@@ -203,31 +324,34 @@ export function Sidebar() {
               <span className="font-mono text-cyan">WS Connected</span>
             </div>
           </div>
-        )}
-        {!sidebarOpen && (
-          <div className="flex flex-col items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green animate-pulse" title="Live" />
-            <div className="w-2 h-2 rounded-full bg-cyan animate-pulse" title="WebSocket Connected" />
-          </div>
-        )}
-      </div>
+        </div>
+      </aside>
 
-      {/* Toggle Button */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className={clsx(
-          'absolute -right-2 bottom-4 z-10 w-8 h-8 rounded-full glass',
-          'flex items-center justify-center text-hive-textMuted hover:text-cyan',
-          'transition-all duration-200 border border-hive-border/50',
-          sidebarOpen ? 'rotate-180' : 'rotate-0'
-        )}
-        aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
-        aria-expanded={sidebarOpen}
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path d="M15 18l-6-6 6-6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </button>
-    </aside>
+      {/* Mobile Bottom Navigation */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-strong border-t border-hive-border/50 backdrop-blur" aria-label="Bottom navigation">
+        <div className="grid grid-cols-5">
+          {MOBILE_TABS.map((tab) => (
+            <Link
+              key={tab.id}
+              href={`/${tab.id}`}
+              onClick={() => setActiveTab(tab.id)}
+              className={clsx(
+                'flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl transition-all duration-200',
+                'text-hive-textMuted',
+                'focus:outline-none focus:ring-2 focus:ring-cyan/50 focus:ring-offset-2 focus:ring-offset-hive-bg',
+                isActive(tab.id)
+                  ? 'text-cyan bg-cyan/10'
+                  : 'hover:text-hive-text'
+              )}
+              aria-current={isActive(tab.id) ? 'page' : undefined}
+              aria-label={tab.description}
+            >
+              <span className="w-6 h-6" aria-hidden="true">{ICONS[tab.icon]}</span>
+              <span className="text-[10px] font-medium truncate max-w-[60px]">{tab.label}</span>
+            </Link>
+          ))}
+        </div>
+      </nav>
+    </>
   );
 }

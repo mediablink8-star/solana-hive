@@ -91,6 +91,65 @@ function remove(table, predicate) {
   return null;
 }
 
+// Known SOL mint addresses (wrapped SOL, native SOL, etc.)
+const SOL_MINT_ADDRESSES = new Set([
+  "So11111111111111111111111111111111111111112", // Native SOL
+  "mSoLzYCxHdYgdzU16g5QSh3i5K3z3K3Z3K3Z3K3Z3K3", // Marinade mSOL
+  "stSOLzYCxHdYgdzU16g5QSh3i5K3z3K3Z3K3Z3K3Z3K3", // Lido stSOL
+  "7dHbWX5io3YcEyYshQzFz9y8nY1K1Z5X9Y8Z7X6Y5Z4X", // BONK (often mislabeled)
+  "SooEj828BSjtgTecBRkqBJ4oquc713yyFZqbCawawoN", // Another SOL variant
+]);
+
+// Token metadata cache for known tokens
+const KNOWN_TOKENS = {
+  "So11111111111111111111111111111111111111112": { symbol: "SOL", name: "Solana" },
+  "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v": { symbol: "USDC", name: "USD Coin" },
+  "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB": { symbol: "USDT", name: "Tether USD" },
+  "7dHbWX5io3YcEyYshQzFz9y8nY1K1Z5X9Y8Z7X6Y5Z4X": { symbol: "BONK", name: "Bonk" },
+  "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xrn6Q7y5Z4X3Y2W": { symbol: "WIF", name: "dogwifhat" },
+  "JUPyiwrYJFskUPiHa7hkeR8VUtAeFjSYbKP2w3y5Z6X7": { symbol: "JUP", name: "Jupiter" },
+  "orcaEKTdK7LKz57vaAYr9QeNsVEPfiu6QeA7Z8Y9X0W1": { symbol: "ORCA", name: "Orca" },
+  "RAYjU7N8Y9Z0X1W2V3U4T5S6R7Q8P9O0I1U2Y3T4R5": { symbol: "RAY", name: "Raydium" },
+  "mSoLzYCxHdYgdzU16g5QSh3i5K3z3K3Z3K3Z3K3Z3K3": { symbol: "mSOL", name: "Marinade Staked SOL" },
+  "stSOLzYCxHdYgdzU16g5QSh3i5K3z3K3Z3K3Z3K3Z3K3": { symbol: "stSOL", name: "Lido Staked SOL" },
+  "SooEj828BSjtgTecBRkqBJ4oquc713yyFZqbCawawoN": { symbol: "SOL", name: "Solana" },
+};
+
+function validateMintAddress(mint) {
+  if (!mint || typeof mint !== 'string') return false;
+  // Solana addresses are base58 encoded, 32-44 characters
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+  if (!base58Regex.test(mint)) return false;
+  
+  // Reject obvious pump.fun/meme token patterns that are likely scams
+  if (mint.endsWith('pump') || mint.endsWith('pumps')) return false;
+  
+  return true;
+}
+
+function resolveTokenMetadata(mint, symbol, name) {
+  // First check known tokens
+  if (KNOWN_TOKENS[mint]) {
+    return KNOWN_TOKENS[mint];
+  }
+  
+  // Check if it's a known SOL variant
+  if (SOL_MINT_ADDRESSES.has(mint)) {
+    return { symbol: 'SOL', name: 'Solana' };
+  }
+  
+  // Use provided symbol/name if valid
+  if (symbol && name && symbol !== 'UNKNOWN' && name !== 'Unknown') {
+    // Never use SOL as fallback for unknown tokens
+    if (symbol === 'SOL' && !KNOWN_TOKENS[mint] && !SOL_MINT_ADDRESSES.has(mint)) {
+      return { symbol: 'UNKNOWN', name: 'Unknown Token' };
+    }
+    return { symbol, name };
+  }
+  // Never use SOL as fallback for unknown tokens
+  return { symbol: 'UNKNOWN', name: 'Unknown Token' };
+}
+
 app.get("/", (req, res) => res.json({ status: "ok", service: "solana-hive-backend", time: new Date().toISOString() }));
 app.get("/health", (req, res) => res.json({ status: "ok", time: new Date().toISOString() }));
 app.get("/agents", (req, res) => res.json(db.agents));
@@ -102,17 +161,33 @@ app.post("/scan", async (req, res) => {
     const r = await fetch("https://api.dexscreener.com/latest/dex/search?q=solana");
     const data = await r.json();
     const pairs = (data.pairs || []).filter(p => p.chainId === "solana");
-    let count = 0;
+    
+    // Deduplicate by mint address - keep the pair with highest liquidity
+    const tokenMap = new Map();
     for (const p of pairs) {
-      const existing = find("tokens", t => t.mint === p.baseToken?.address);
-      const record = {
-        mint: p.baseToken?.address,
-        symbol: p.baseToken?.symbol,
-        name: p.baseToken?.name,
-        price: parseFloat(p.priceUsd || 0),
-        liquidity: parseFloat(p.liquidity?.usd || 0),
-        updated_at: new Date().toISOString()
-      };
+      const mint = p.baseToken?.address;
+      if (!validateMintAddress(mint)) continue;
+      
+      const liquidity = parseFloat(p.liquidity?.usd || 0);
+      const existing = tokenMap.get(mint);
+      if (!existing || liquidity > existing.liquidity) {
+        const metadata = resolveTokenMetadata(mint, p.baseToken?.symbol, p.baseToken?.name);
+        tokenMap.set(mint, {
+          mint,
+          symbol: metadata.symbol,
+          name: metadata.name,
+          price: parseFloat(p.priceUsd || 0),
+          liquidity,
+          volume24h: parseFloat(p.volume?.h24 || 0),
+          priceChange24h: parseFloat(p.priceChange?.h24 || 0),
+          updated_at: new Date().toISOString()
+        });
+      }
+    }
+    
+    let count = 0;
+    for (const record of tokenMap.values()) {
+      const existing = find("tokens", t => t.mint === record.mint);
       if (existing) {
         update("tokens", t => t.mint === record.mint, record);
       } else {
@@ -159,6 +234,8 @@ app.post("/paper-trade", (req, res) => {
   const positionId = Date.now();
   insert("positions", { id: positionId, mint, qty, entry_price: execPrice, sol_invested: amount, status: "open", created_at: new Date().toISOString() });
   cfg.balance -= amount;
+  // Record ledger entry
+  insert("ledger", { type: "trade_open", amount: -amount, balance: cfg.balance, created_at: new Date().toISOString() });
   saveDb(db);
   res.json({ ok: true, mint, qty, execPrice, fee, slippage });
 });
@@ -176,6 +253,8 @@ app.post("/partial-exit", (req, res) => {
     status: pos.qty - qty <= 0 ? "closed" : "open"
   });
   db.portfolio_config.balance += proceeds;
+  // Record ledger entry
+  insert("ledger", { type: "trade_close", amount: proceeds, balance: db.portfolio_config.balance, created_at: new Date().toISOString() });
   saveDb(db);
   res.json({ ok: true, positionId, qty, exitPrice, proceeds });
 });
@@ -189,7 +268,18 @@ app.post("/risk-veto", (req, res) => {
 app.get("/portfolio", (req, res) => {
   const cfg = db.portfolio_config;
   const positions = findAll("positions", p => p.status === "open");
-  res.json({ config: cfg, openPositions: positions });
+  
+  // Calculate current position values
+  const positionsWithPnl = positions.map(pos => {
+    const token = find("tokens", t => t.mint === pos.mint);
+    if (!token) return { ...pos, current_price: pos.entry_price, unrealized_pnl: 0, unrealized_pnl_pct: 0 };
+    const currentPrice = token.price;
+    const unrealized_pnl = (currentPrice - pos.entry_price) * pos.qty;
+    const unrealized_pnl_pct = ((currentPrice - pos.entry_price) / pos.entry_price) * 100;
+    return { ...pos, current_price: currentPrice, unrealized_pnl, unrealized_pnl_pct };
+  });
+  
+  res.json({ config: cfg, openPositions: positionsWithPnl });
 });
 
 app.get("/score/:mint", (req, res) => {
@@ -231,16 +321,31 @@ setInterval(async () => {
     const r = await fetch("https://api.dexscreener.com/latest/dex/search?q=solana");
     const data = await r.json();
     const pairs = (data.pairs || []).filter(p => p.chainId === "solana");
+    
+    const tokenMap = new Map();
     for (const p of pairs) {
-      const existing = find("tokens", t => t.mint === p.baseToken?.address);
-      const record = {
-        mint: p.baseToken?.address,
-        symbol: p.baseToken?.symbol,
-        name: p.baseToken?.name,
-        price: parseFloat(p.priceUsd || 0),
-        liquidity: parseFloat(p.liquidity?.usd || 0),
-        updated_at: new Date().toISOString()
-      };
+      const mint = p.baseToken?.address;
+      if (!validateMintAddress(mint)) continue;
+      
+      const liquidity = parseFloat(p.liquidity?.usd || 0);
+      const existing = tokenMap.get(mint);
+      if (!existing || liquidity > existing.liquidity) {
+        const metadata = resolveTokenMetadata(mint, p.baseToken?.symbol, p.baseToken?.name);
+        tokenMap.set(mint, {
+          mint,
+          symbol: metadata.symbol,
+          name: metadata.name,
+          price: parseFloat(p.priceUsd || 0),
+          liquidity,
+          volume24h: parseFloat(p.volume?.h24 || 0),
+          priceChange24h: parseFloat(p.priceChange?.h24 || 0),
+          updated_at: new Date().toISOString()
+        });
+      }
+    }
+    
+    for (const record of tokenMap.values()) {
+      const existing = find("tokens", t => t.mint === record.mint);
       if (existing) {
         update("tokens", t => t.mint === record.mint, record);
       } else {
