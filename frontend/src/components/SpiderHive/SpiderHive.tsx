@@ -748,7 +748,7 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
 }
 
 function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
-  const { camera, size } = useThree();
+  const { camera } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
   useEffect(() => {
@@ -759,8 +759,8 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
         const vector = new THREE.Vector3(...node.position);
         const pos = vector.clone().project(camera);
         newPositions[node.id] = {
-          x: (pos.x * 0.5 + 0.5) * size.width,
-          y: (-pos.y * 0.5 + 0.5) * size.height,
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
           visible: pos.z < 1,
         };
       });
@@ -770,7 +770,7 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
     updatePositions();
     const interval = setInterval(updatePositions, 1000 / 30); // 30fps
     return () => clearInterval(interval);
-  }, [nodes, camera, size]);
+  }, [nodes, camera]);
 
   return (
     <>
@@ -804,7 +804,7 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
 }
 
 function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
-  const { camera, size } = useThree();
+  const { camera } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
   useEffect(() => {
@@ -815,8 +815,8 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
         const vector = new THREE.Vector3(...node.position);
         const pos = vector.clone().project(camera);
         newPositions[node.id] = {
-          x: (pos.x * 0.5 + 0.5) * size.width,
-          y: (-pos.y * 0.5 + 0.5) * size.height,
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
           visible: pos.z < 1,
         };
       });
@@ -826,7 +826,7 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
     updatePositions();
     const interval = setInterval(updatePositions, 1000 / 30); // 30fps
     return () => clearInterval(interval);
-  }, [nodes, camera, size]);
+  }, [nodes, camera]);
 
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
