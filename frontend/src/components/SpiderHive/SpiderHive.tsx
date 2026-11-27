@@ -535,68 +535,6 @@ function NodeMeshLabel({ node, isJarvis }: { node: SpiderNode; isJarvis: boolean
   );
 }
 
-function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
-  const { camera } = useThree();
-  const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
-  
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-    nodes.forEach(node => {
-      const vector = new THREE.Vector3(...node.position);
-      const pos = vector.clone().project(camera);
-      newPositions[node.id] = {
-        x: (pos.x * 0.5 + 0.5) * window.innerWidth,
-        y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
-        visible: pos.z < 1,
-      };
-    });
-    setPositions(newPositions);
-  });
-
-  const stateLabels: Record<string, string> = {
-    idle: 'IDLE',
-    active: 'ACTIVE',
-    thinking: 'THINKING',
-    communicating: 'COMM',
-    approving: 'APPROVE',
-    rejecting: 'REJECT',
-    executing: 'EXEC',
-  };
-
-  const stateColors: Record<string, string> = {
-    idle: 'hive-textDim',
-    active: 'hive-cyan',
-    thinking: 'hive-purple',
-    communicating: 'hive-green',
-    approving: 'hive-green',
-    rejecting: 'hive-red',
-    executing: 'hive-orange',
-  };
-
-  return (
-    <>
-      {nodes.map(node => {
-        const pos = positions[node.id];
-        if (!pos || !pos.visible || typeof window === 'undefined') return null;
-        return (
-          <div
-            key={node.id}
-            className={`fixed pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
-            style={{
-              left: pos.x,
-              top: pos.y - 35,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            {stateLabels[node.state]}
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
 function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode) => void }) {
   const { nodes, edges, hoveredNode, selectedNode, cameraPosition, cameraTarget, updateEdgeIntensity, addEdgeParticle } = useSpiderStore();
   const { agents, wsMessages } = useDataStore();
