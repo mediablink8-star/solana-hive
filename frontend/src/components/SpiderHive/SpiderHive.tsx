@@ -724,7 +724,8 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
             </React.Fragment>
           );
         })}
-      <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
+<StateIndicatorsOverlay nodes={nodes} />
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
@@ -746,7 +747,8 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
   );
 }
 
-function NodeLabelsOverlay({ nodes, onNodeClick, camera }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void; camera: THREE.Camera }) {
+function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
+  const { camera } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
   useEffect(() => {
@@ -801,7 +803,8 @@ function NodeLabelsOverlay({ nodes, onNodeClick, camera }: { nodes: SpiderNode[]
   );
 }
 
-function StateIndicatorsOverlay({ nodes, camera }: { nodes: SpiderNode[]; camera: THREE.Camera }) {
+function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
+  const { camera } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
   useEffect(() => {
@@ -1057,7 +1060,8 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </React.Fragment>
           );
         })}
-      <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
+      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
+<StateIndicatorsOverlay nodes={nodes} />
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1073,20 +1077,10 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
               </span>
             </span>
           ))}
-        <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
+        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
+<StateIndicatorsOverlay nodes={nodes} />
       </div>
     </div>
-  );
-}
-
-function OverlayComponents({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
-  const { camera } = useThree();
-  
-  return (
-    <>
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={camera} />
-      <StateIndicatorsOverlay nodes={nodes} camera={camera} />
-    </>
   );
 }
 
