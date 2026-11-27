@@ -751,20 +751,26 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
   const { camera, size } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-    nodes.forEach(node => {
-      const vector = new THREE.Vector3(...node.position);
-      const pos = vector.clone().project(camera);
-      newPositions[node.id] = {
-        x: (pos.x * 0.5 + 0.5) * size.width,
-        y: (-pos.y * 0.5 + 0.5) * size.height,
-        visible: pos.z < 1,
-      };
-    });
-    setPositions(newPositions);
-  });
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * size.width,
+          y: (-pos.y * 0.5 + 0.5) * size.height,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera, size]);
 
   return (
     <>
@@ -801,20 +807,26 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
   const { camera, size } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
   
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
-    nodes.forEach(node => {
-      const vector = new THREE.Vector3(...node.position);
-      const pos = vector.clone().project(camera);
-      newPositions[node.id] = {
-        x: (pos.x * 0.5 + 0.5) * size.width,
-        y: (-pos.y * 0.5 + 0.5) * size.height,
-        visible: pos.z < 1,
-      };
-    });
-    setPositions(newPositions);
-  });
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * size.width,
+          y: (-pos.y * 0.5 + 0.5) * size.height,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera, size]);
 
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
