@@ -747,6 +747,86 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
 }
 
 function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
+  const { camera } = useThree();
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
+  
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera]);
+
+  return (
+    <>
+      {nodes.map(node => {
+        const pos = positions[node.id];
+        if (!pos || !pos.visible || typeof window === 'undefined') return null;
+        const isJarvis = node.id === 'jarvis';
+        return (
+          <div
+            key={node.id}
+            className={clsx(
+              'fixed pointer-events-none z-10 transition-all duration-300',
+              'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
+              isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
+              'whitespace-nowrap'
+            )}
+            style={{
+              left: pos.x,
+              top: pos.y - (isJarvis ? 50 : 30),
+              transform: 'translate(-50%, -100%)',
+            }}
+            onClick={() => onNodeClick(node)}
+          >
+            {node.name}
+            <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
+  const { camera } = useThree();
+  const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
+  
+  useEffect(() => {
+    const updatePositions = () => {
+      if (typeof window === 'undefined') return;
+      const newPositions: Record<string, { x: number; y: number; visible: boolean }> = {};
+      nodes.forEach(node => {
+        const vector = new THREE.Vector3(...node.position);
+        const pos = vector.clone().project(camera);
+        newPositions[node.id] = {
+          x: (pos.x * 0.5 + 0.5) * window.innerWidth,
+          y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
+          visible: pos.z < 1,
+        };
+      });
+      setPositions(newPositions);
+    };
+    
+    updatePositions();
+    const interval = setInterval(updatePositions, 1000 / 30); // 30fps
+    return () => clearInterval(interval);
+  }, [nodes, camera]);
+
   const stateLabels: Record<string, string> = {
     idle: 'IDLE',
     active: 'ACTIVE',
@@ -770,72 +850,22 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
   return (
     <>
       {nodes.map(node => {
-        const isJarvis = node.id === 'jarvis';
+        const pos = positions[node.id];
+        if (!pos || !pos.visible || typeof window === 'undefined') return null;
         return (
-          <Html
+          <div
             key={node.id}
-            position={node.position}
-            center
-            occlude
-            onClick={() => onNodeClick(node)}
+            className={`fixed pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
             style={{
-              pointerEvents: 'auto',
+              left: pos.x,
+              top: pos.y - 35,
               transform: 'translate(-50%, -100%)',
             }}
-            className={clsx(
-              'pointer-events-auto z-10 transition-all duration-300',
-              'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
-              isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
-              'whitespace-nowrap'
-            )}
           >
-            {node.name}
-            <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
-          </Html>
+            {stateLabels[node.state]}
+          </div>
         );
       })}
-    </>
-  );
-}
-
-function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
-  const stateLabels: Record<string, string> = {
-    idle: 'IDLE',
-    active: 'ACTIVE',
-    thinking: 'THINKING',
-    communicating: 'COMM',
-    approving: 'APPROVE',
-    rejecting: 'REJECT',
-    executing: 'EXEC',
-  };
-
-  const stateColors: Record<string, string> = {
-    idle: 'hive-textDim',
-    active: 'hive-cyan',
-    thinking: 'hive-purple',
-    communicating: 'hive-green',
-    approving: 'hive-green',
-    rejecting: 'hive-red',
-    executing: 'hive-orange',
-  };
-
-  return (
-    <>
-      {nodes.map(node => (
-        <Html
-          key={node.id}
-          position={node.position}
-          center
-          occlude
-          style={{
-            pointerEvents: 'none',
-            transform: 'translate(-50%, -100%)',
-          }}
-          className={`pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
-        >
-          {stateLabels[node.state]}
-        </Html>
-      ))}
     </>
   );
 }
@@ -848,26 +878,6 @@ function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeCli
     </>
   );
 }
-
-  const stateLabels: Record<string, string> = {
-    idle: 'IDLE',
-    active: 'ACTIVE',
-    thinking: 'THINKING',
-    communicating: 'COMM',
-    approving: 'APPROVE',
-    rejecting: 'REJECT',
-    executing: 'EXEC',
-  };
-
-  const stateColors: Record<string, string> = {
-    idle: 'hive-textDim',
-    active: 'hive-cyan',
-    thinking: 'hive-purple',
-    communicating: 'hive-green',
-    approving: 'hive-green',
-    rejecting: 'hive-red',
-    executing: 'hive-orange',
-  };
 
   return (
     <>
