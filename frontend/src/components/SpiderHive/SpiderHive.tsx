@@ -1073,7 +1073,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
               </span>
             </span>
           ))}
-        </div>
+        <OverlayWrapper nodes={nodes} onNodeClick={onNodeClick} />
       </div>
     </div>
   );
