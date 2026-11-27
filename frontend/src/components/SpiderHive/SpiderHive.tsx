@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
@@ -724,10 +724,12 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
             </React.Fragment>
           );
         })}
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
+      <Html fullscreen>
+        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
         <StateIndicatorsOverlay nodes={nodes} camera={useThree().camera} />
+      </Html>
 
-        <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
+      <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-hive-text font-semibold">NODES</span>
           {nodes.map(node => (
@@ -1058,10 +1060,12 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </React.Fragment>
           );
         })}
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
+      <Html fullscreen>
+        <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} camera={useThree().camera} />
         <StateIndicatorsOverlay nodes={nodes} camera={useThree().camera} />
+      </Html>
 
-        <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
+      <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-hive-text font-semibold">NODES</span>
           {nodes.map(node => (
