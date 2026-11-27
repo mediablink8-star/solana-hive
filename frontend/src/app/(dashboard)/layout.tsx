@@ -1,6 +1,7 @@
 'use client';
 
 import { MainLayout } from '@/components/Layout/MainLayout';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useTokens, useAgents, useDecisions, usePortfolio, useValidation, useWebSocket, usePerformance, useAnalysisCycle } from '@/hooks/useApi';
 
 export default function DashboardLayout({
@@ -18,5 +19,9 @@ export default function DashboardLayout({
   usePerformance();
   useAnalysisCycle();
 
-  return <MainLayout>{children}</MainLayout>;
+  return (
+    <ErrorBoundary>
+      <MainLayout>{children}</MainLayout>
+    </ErrorBoundary>
+  );
 }
