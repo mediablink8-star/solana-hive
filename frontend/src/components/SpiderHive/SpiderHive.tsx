@@ -724,7 +724,7 @@ function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode
             </React.Fragment>
           );
         })}
-      <OverlayWrapper nodes={nodes} onNodeClick={onNodeClick} />
+      <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1057,7 +1057,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </React.Fragment>
           );
         })}
-      <OverlayWrapper nodes={nodes} onNodeClick={onNodeClick} />
+      <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
 
       <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
         <div className="flex items-center gap-4 flex-wrap">
@@ -1073,13 +1073,13 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
               </span>
             </span>
           ))}
-        <OverlayWrapper nodes={nodes} onNodeClick={onNodeClick} />
+        <OverlayComponents nodes={nodes} onNodeClick={onNodeClick} />
       </div>
     </div>
   );
 }
 
-function OverlayWrapper({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
+function OverlayComponents({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
   const { camera } = useThree();
   
   return (
