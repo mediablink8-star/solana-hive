@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
@@ -523,25 +523,36 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
         const pos = positions[node.id];
         if (!pos || !pos.visible || typeof window === 'undefined') return null;
         const isJarvis = node.id === 'jarvis';
+        const vector = new THREE.Vector3(...node.position);
+        const projected = vector.clone().project(camera);
+        const x = (projected.x * 0.5 + 0.5) * size.width;
+        const y = (-projected.y * 0.5 + 0.5) * size.height;
         return (
-          <div
+          <Html
             key={node.id}
-            className={clsx(
-              'fixed pointer-events-none z-10 transition-all duration-300',
-              'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
-              isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
-              'whitespace-nowrap'
-            )}
-            style={{
-              left: pos.x,
-              top: pos.y - (isJarvis ? 50 : 30),
-              transform: 'translate(-50%, -100%)',
-            }}
-            onClick={() => onNodeClick(node)}
+            position={node.position as [number, number, number]}
+            transform
+            sprite
+            distanceFactor={10}
+            occlude={false}
           >
-            {node.name}
-            <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
-          </div>
+            <div
+              className={clsx(
+                'pointer-events-none z-10 transition-all duration-300',
+                'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
+                isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
+                'whitespace-nowrap'
+              )}
+              style={{
+                transform: 'translate(-50%, -100%)',
+                pointerEvents: 'auto',
+              }}
+              onClick={() => onNodeClick(node)}
+            >
+              {node.name}
+              <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
+            </div>
+          </Html>
         );
       })}
     </>
@@ -592,18 +603,28 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
       {nodes.map(node => {
         const pos = positions[node.id];
         if (!pos || !pos.visible || typeof window === 'undefined') return null;
+        const vector = new THREE.Vector3(...node.position);
+        const projected = vector.clone().project(camera);
+        const x = (projected.x * 0.5 + 0.5) * size.width;
+        const y = (-projected.y * 0.5 + 0.5) * size.height;
         return (
-          <div
+          <Html
             key={node.id}
-            className={`fixed pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
-            style={{
-              left: pos.x,
-              top: pos.y - 35,
-              transform: 'translate(-50%, -100%)',
-            }}
+            position={node.position as [number, number, number]}
+            transform
+            sprite
+            distanceFactor={10}
+            occlude={false}
           >
-            {stateLabels[node.state]}
-          </div>
+            <div
+              className={`pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
+              style={{
+                transform: 'translate(-50%, -100%)',
+              }}
+            >
+              {stateLabels[node.state]}
+            </div>
+          </Html>
         );
       })}
     </>
