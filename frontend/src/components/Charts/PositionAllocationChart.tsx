@@ -39,7 +39,7 @@ export function PositionAllocationChart({
 }: PositionAllocationChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<any> | null>(null);
 
   const processedData = useMemo(() => {
     if (!positions || positions.length === 0 || totalInvested <= 0) return [];
@@ -89,7 +89,7 @@ export function PositionAllocationChart({
 
     chartRef.current = chart;
 
-    const series = chart.addHistogramSeries({
+    const series = chart.addSeries('Histogram' as any, {
       color: CYAN,
       base: 0,
       priceLineVisible: false,

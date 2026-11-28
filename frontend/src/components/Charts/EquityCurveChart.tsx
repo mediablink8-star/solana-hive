@@ -49,9 +49,9 @@ export function EquityCurveChart({
 }: EquityCurveChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const equitySeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-  const drawdownSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-  const pnlSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+  const equitySeriesRef = useRef<ISeriesApi<any> | null>(null);
+  const drawdownSeriesRef = useRef<ISeriesApi<any> | null>(null);
+  const pnlSeriesRef = useRef<ISeriesApi<any> | null>(null);
 
   // Process data for drawdown and P&L
   const processedData = useMemo(() => {
@@ -130,7 +130,7 @@ export function EquityCurveChart({
     chartRef.current = chart;
 
     // Equity curve line series
-    const equitySeries = chart.addLineSeries({
+    const equitySeries = chart.addSeries('Line' as any, {
       color: CYAN,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
@@ -149,7 +149,7 @@ export function EquityCurveChart({
 
     // Drawdown area (negative values)
     if (showDrawdown) {
-      const drawdownSeries = chart.addLineSeries({
+      const drawdownSeries = chart.addSeries('Line' as any, {
         color: RED,
         lineWidth: 1,
         lineStyle: LineStyle.Solid,
@@ -163,7 +163,7 @@ export function EquityCurveChart({
 
     // P&L histogram
     if (showPnL) {
-      const pnlSeries = chart.addHistogramSeries({
+      const pnlSeries = chart.addSeries('Histogram' as any, {
         color: GREEN,
         base: 0,
         priceLineVisible: false,

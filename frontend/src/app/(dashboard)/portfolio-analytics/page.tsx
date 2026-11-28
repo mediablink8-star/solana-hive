@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePerformance } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import { TrendingUp, TrendingDown, Target, DollarSign, PieChart, BarChart2, Shield } from 'lucide-react';
+import { TrendingUp, TrendingDown, Target, DollarSign, PieChart, BarChart, Shield } from 'lucide-react';
 
 export default function PortfolioAnalyticsPage() {
   const { metrics, agentPerformance, strategyPerformance, loading } = usePerformance();
@@ -12,7 +12,7 @@ export default function PortfolioAnalyticsPage() {
     { label: 'Net ROI', value: `${metrics?.netROI?.toFixed(1) || '23.4'}%`, icon: TrendingUp, color: 'hive-green', trend: '+2.1%' },
     { label: 'Total PnL', value: `${(metrics?.totalRealizedPnl || 0.45) + (metrics?.totalUnrealizedPnl || 1.37)} SOL`, icon: DollarSign, color: 'hive-cyan', trend: '+0.3 SOL' },
     { label: 'Win Rate', value: `${metrics?.winRate?.toFixed(1) || '68.5'}%`, icon: Target, color: 'hive-purple', trend: '+4.2%' },
-    { label: 'Profit Factor', value: `${metrics?.profitFactor?.toFixed(1) || '2.1'}x`, icon: BarChart2, color: 'hive-gold', trend: '+0.3x' },
+    { label: 'Profit Factor', value: `${metrics?.profitFactor?.toFixed(1) || '2.1'}x`, icon: BarChart, color: 'hive-gold', trend: '+0.3x' },
     { label: 'Max Drawdown', value: `${metrics?.maxDrawdown?.toFixed(1) || '12.3'}%`, icon: TrendingDown, color: 'hive-red', trend: '-1.2%' },
     { label: 'Sharpe Ratio', value: '1.8', icon: Shield, color: 'hive-orange', trend: '+0.1' },
   ];
@@ -84,7 +84,7 @@ export default function PortfolioAnalyticsPage() {
         <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
           <div className="px-5 py-4 border-b border-hive-border/50">
             <h2 className="font-semibold text-hive-text flex items-center gap-2">
-              <BarChart2 className="w-5 h-5 text-green" />
+              <BarChart className="w-5 h-5 text-green" />
               Strategy Performance
             </h2>
           </div>

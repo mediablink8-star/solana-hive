@@ -5,13 +5,13 @@ import { useTokens, useAgents, useDecisions, usePortfolio, useWebSocket, usePerf
 import { clsx } from 'clsx';
 import { 
   TrendingUp, TrendingDown, DollarSign, Users, Zap, Brain, 
-  Shield, Target, Activity, Wallet, Network, CheckCircle 
+  Shield, Target, Heart, Wallet, Network, CheckCircle, Package 
 } from 'lucide-react';
 
 const KPI_CARDS = [
   { label: 'Total Value', value: '0.9 SOL', change: '+2.3%', icon: DollarSign, color: 'hive-cyan', positive: true },
   { label: 'Available', value: '0.9 SOL', change: '0.0%', icon: Wallet, color: 'hive-green', positive: true },
-  { label: 'Open Positions', value: '2', change: '+1', icon: Briefcase, color: 'hive-purple', positive: true },
+  { label: 'Open Positions', value: '2', change: '+1', icon: Package, color: 'hive-purple', positive: true },
   { label: 'Win Rate', value: '68.5%', change: '+4.2%', icon: Target, color: 'hive-gold', positive: true },
   { label: 'Net ROI', value: '23.4%', change: '+1.8%', icon: TrendingUp, color: 'hive-green', positive: true },
   { label: 'Active Agents', value: '8/8', change: 'LIVE', icon: Users, color: 'hive-cyan', positive: true },
@@ -133,7 +133,7 @@ export default function CommandCenterPage() {
                         </span>
                         {agent.status !== 'idle' && (
                           <span className="text-[10px] text-hive-textDim flex items-center gap-1">
-                            <Activity className="w-3 h-3 text-green animate-pulse" />
+                            <Heart className="w-3 h-3 text-green animate-pulse" />
                             LIVE
                           </span>
                         )}
@@ -267,7 +267,7 @@ export default function CommandCenterPage() {
           <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
             <div className="px-5 py-4 border-b border-hive-border/50 flex items-center justify-between">
               <h2 className="font-semibold text-hive-text flex items-center gap-2">
-                <Activity className="w-5 h-5 text-orange" />
+                <Heart className="w-5 h-5 text-orange" />
                 System Health
               </h2>
               <span className="text-xs font-mono text-green">OPTIMAL</span>

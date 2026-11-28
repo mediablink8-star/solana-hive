@@ -38,7 +38,7 @@ export function PerformanceMetricsChart({
 }: PerformanceMetricsChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<any> | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return;
@@ -76,7 +76,7 @@ export function PerformanceMetricsChart({
 
     chartRef.current = chart;
 
-    const series = chart.addLineSeries({
+    const series = chart.addSeries('Line' as any, {
       color,
       lineWidth: 2,
       lineStyle: LineStyle.Solid,
@@ -157,7 +157,7 @@ export function TokenPriceChart({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const seriesRef = useRef<ISeriesApi<any> | null>(null);
 
   useEffect(() => {
     if (!containerRef.current || data.length === 0) return;
@@ -196,7 +196,7 @@ export function TokenPriceChart({
 
     chartRef.current = chart;
 
-    const series = chart.addCandlestickSeries({
+    const series = chart.addSeries('Candlestick' as any, {
       upColor: GREEN,
       downColor: RED,
       borderUpColor: GREEN,

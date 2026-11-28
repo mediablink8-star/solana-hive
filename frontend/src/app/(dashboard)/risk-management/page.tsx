@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePortfolio } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import { Shield, AlertTriangle, Target, BarChart2, Settings, SlidersHorizontal } from 'lucide-react';
+import { Shield, AlertTriangle, Target, BarChart, Settings, SlidersHorizontal } from 'lucide-react';
 
 export default function RiskManagementPage() {
   const { portfolio } = usePortfolio();
@@ -12,7 +12,7 @@ export default function RiskManagementPage() {
   const riskMetrics = [
     { label: 'Portfolio VaR (95%)', value: '2.3%', threshold: '< 5%', status: 'safe', icon: Shield },
     { label: 'Max Position Size', value: '18.5%', threshold: '< 20%', status: 'safe', icon: Target },
-    { label: 'Correlation Risk', value: '0.34', threshold: '< 0.7', status: 'safe', icon: BarChart2 },
+    { label: 'Correlation Risk', value: '0.34', threshold: '< 0.7', status: 'safe', icon: BarChart },
     { label: 'Leverage Ratio', value: '1.0x', threshold: '< 2.0x', status: 'safe', icon: Settings },
     { label: 'Liquidity Buffer', value: '15%', threshold: '> 10%', status: 'safe', icon: Shield },
     { label: 'Stop Loss Triggered', value: '0', threshold: '0', status: 'safe', icon: AlertTriangle },
@@ -31,7 +31,7 @@ export default function RiskManagementPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {riskMetrics.map((metric, idx) => {
           const Icon = metric.icon;
-          const statusColors = { safe: 'text-green bg-green/10 border-green/20', warning: 'text-yellow bg-yellow/10 border-yellow/20', danger: 'text-red bg-red/10 border-red/20' };
+          const statusColors: Record<string, string> = { safe: 'text-green bg-green/10 border-green/20', warning: 'text-yellow bg-yellow/10 border-yellow/20', danger: 'text-red bg-red/10 border-red/20' };
           return (
             <div key={idx} className="glass rounded-2xl border border-hive-border/50 p-5">
               <div className="flex items-start justify-between mb-3">
@@ -120,7 +120,7 @@ export default function RiskManagementPage() {
               </div>
               <div className="glass rounded-xl p-4 border border-hive-border/50 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-green/10 flex items-center justify-center">
-                  <BarChart2 className="w-5 h-5 text-green" />
+                  <BarChart className="w-5 h-5 text-green" />
                 </div>
                 <div>
                   <p className="font-medium text-hive-text">Correlation risk minimal</p>

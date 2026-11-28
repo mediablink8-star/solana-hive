@@ -47,7 +47,7 @@ export default function ValidationProgressPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Decisions Verified</p>
-              <p className="text-3xl font-bold font-mono text-gradient-green">{report?.decisions || 1,247}</p>
+              <p className="text-3xl font-bold font-mono text-gradient-green">{report?.decisions || 1247}</p>
             </div>
             <div className="w-12 h-12 rounded-xl bg-green/10 flex items-center justify-center">
               <CheckCircle className="w-6 h-6 text-green" />
