@@ -3,7 +3,7 @@
 import React from 'react';
 import { usePortfolio } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import { Wallet, DollarSign, TrendingUp, TrendingDown, Send, Receive, ArrowRightLeft, Activity } from 'lucide-react';
+import { Wallet, DollarSign, TrendingUp, TrendingDown, Send, ArrowDownToLine, ArrowRightLeft, Activity } from 'lucide-react';
 
 export default function WalletPage() {
   const { portfolio } = usePortfolio();
@@ -26,7 +26,7 @@ export default function WalletPage() {
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
-            <Receive className="w-4 h-4" />
+            <ArrowDownToLine className="w-4 h-4" />
             Receive
           </button>
           <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
@@ -68,7 +68,7 @@ export default function WalletPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-green/10 flex items-center justify-center">
-            <Receive className="w-6 h-6 text-green" />
+            <ArrowDownToLine className="w-6 h-6 text-green" />
           </div>
           <p className="font-medium text-hive-text">Receive</p>
           <p className="text-hive-textDim text-xs">Deposit tokens</p>
