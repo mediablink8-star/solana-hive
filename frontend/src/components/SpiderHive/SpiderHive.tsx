@@ -459,8 +459,10 @@ function ConnectionEdge({
   sourceColor: THREE.Color;
   targetColor: THREE.Color;
 }) {
-  const lineRef = useRef<THREE.Line>(null);
-  const glowRef = useRef<THREE.Line>(null);
+  const lineRef = useRef<{ line: THREE.Line; glow: THREE.Line }>({ 
+    line: new THREE.Line(), 
+    glow: new THREE.Line() 
+  });
   const pulseRef = useRef(0);
   
   const midPoint = new THREE.Vector3()
@@ -505,18 +507,19 @@ function ConnectionEdge({
     [sourceColor, edge.intensity]
   );
 
-  // Initialize Three.js Line objects
-  useEffect(() => {
-    lineRef.current = new THREE.Line(geometry, material);
-    glowRef.current = new THREE.Line(geometry, glowMaterial);
-    glowRef.current.renderOrder = -1; // Render glow behind main line
+  // Create Three.js Line objects once
+  const lineObjects = useMemo(() => {
+    const line = new THREE.Line(geometry, material);
+    const glow = new THREE.Line(geometry, glowMaterial);
+    glow.renderOrder = -1; // Render glow behind main line
+    return { line, glow };
   }, [geometry, material, glowMaterial]);
 
   useFrame((_, delta) => {
     pulseRef.current += delta;
     const pulse = Math.sin(pulseRef.current * 1.5) * 0.5 + 0.5;
     
-    if (material && lineRef.current) {
+    if (material && lineObjects.line) {
       material.opacity = THREE.MathUtils.lerp(
         material.opacity,
         0.3 + edge.intensity * 0.5 + pulse * 0.1,
@@ -525,7 +528,7 @@ function ConnectionEdge({
       material.color.lerpColors(sourceColor, targetColor, pulse * 0.3 + 0.35);
     }
     
-    if (glowMaterial && glowRef.current) {
+    if (glowMaterial && lineObjects.glow) {
       glowMaterial.opacity = THREE.MathUtils.lerp(
         glowMaterial.opacity,
         0.1 + edge.intensity * 0.2 + pulse * 0.05,
@@ -536,8 +539,8 @@ function ConnectionEdge({
 
   return (
     <group>
-      <primitive object={glowRef.current} />
-      <primitive object={lineRef.current} />
+      <primitive object={lineObjects.glow} />
+      <primitive object={lineObjects.line} />
     </group>
   );
 }
