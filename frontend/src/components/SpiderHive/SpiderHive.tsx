@@ -59,7 +59,7 @@ const AGENT_SPECIALIZATION_COLORS: Record<string, string> = {
 
 function calculate3DPositions(): Record<string, [number, number, number]> {
   const positions: Record<string, [number, number, number]> = {};
-  const center = [0, 0, 0];
+  const center: [number, number, number] = [0, 0, 0];
   const ringRadius = 28;
   const verticalSpread = 12;
   
