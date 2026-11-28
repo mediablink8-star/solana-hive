@@ -3,11 +3,7 @@
 import React from 'react';
 import { usePortfolio } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-<<<<<<< HEAD
 import { Wallet, DollarSign, TrendingUp, TrendingDown, Send, ArrowDown, ArrowRightLeft, Heart } from 'lucide-react';
-=======
-import { Wallet, DollarSign, TrendingUp, TrendingDown, Send, ArrowDownToLine, ArrowRightLeft, Activity } from 'lucide-react';
->>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
 
 export default function WalletPage() {
   const { portfolio } = usePortfolio();
@@ -30,11 +26,7 @@ export default function WalletPage() {
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
-<<<<<<< HEAD
             <ArrowDown className="w-4 h-4" />
-=======
-            <ArrowDownToLine className="w-4 h-4" />
->>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
             Receive
           </button>
           <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
@@ -76,11 +68,7 @@ export default function WalletPage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
           <div className="w-12 h-12 rounded-xl bg-green/10 flex items-center justify-center">
-<<<<<<< HEAD
             <ArrowDown className="w-6 h-6 text-green" />
-=======
-            <ArrowDownToLine className="w-6 h-6 text-green" />
->>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
           </div>
           <p className="font-medium text-hive-text">Receive</p>
           <p className="text-hive-textDim text-xs">Deposit tokens</p>
