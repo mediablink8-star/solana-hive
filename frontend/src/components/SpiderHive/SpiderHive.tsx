@@ -775,7 +775,7 @@ function NetworkBackground() {
 }
 
 function VolumetricLightShafts() {
-  const shaftsRef = useRef<THREE.Mesh[]>([]);
+  const shaftsRef = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]>([]);
   
   const geometry = useMemo(() => {
     const g = new THREE.ConeGeometry(2, 60, 8, 1, true);
