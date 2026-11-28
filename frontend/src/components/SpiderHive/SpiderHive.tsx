@@ -761,7 +761,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
       <Canvas
         camera={{ position: cameraPosition, fov: 50, near: 0.1, far: 200 }}
         style={{ width: '100%', height: '100%', display: 'block' }}
-        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
+        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'default' }}
         shadows={false}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
@@ -777,7 +777,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
         <pointLight position={[0, 0, 0]} color="#00e5ff" intensity={1.0} distance={80} decay={2} />
         <pointLight position={[0, 20, 0]} color="#b87dff" intensity={0.5} distance={60} decay={2} />
         
-        <gridHelper args={[100, 20, '#00e5ff15', '#b87dff15']} position={[0, -35, 0]} />
+        <gridHelper args={[100, 20, 'rgba(0, 229, 255, 0.08)', 'rgba(184, 125, 255, 0.08)']} position={[0, -35, 0]} />
         
         <OrbitControls 
           enableDamping={true}
