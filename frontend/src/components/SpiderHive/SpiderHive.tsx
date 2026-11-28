@@ -505,6 +505,13 @@ function ConnectionEdge({
     [sourceColor, edge.intensity]
   );
 
+  // Initialize Three.js Line objects
+  useEffect(() => {
+    lineRef.current = new THREE.Line(geometry, material);
+    glowRef.current = new THREE.Line(geometry, glowMaterial);
+    glowRef.current.renderOrder = -1; // Render glow behind main line
+  }, [geometry, material, glowMaterial]);
+
   useFrame((_, delta) => {
     pulseRef.current += delta;
     const pulse = Math.sin(pulseRef.current * 1.5) * 0.5 + 0.5;
@@ -529,8 +536,8 @@ function ConnectionEdge({
 
   return (
     <group>
-      <line ref={glowRef} geometry={geometry} material={glowMaterial} />
-      <line ref={lineRef} geometry={geometry} material={material} />
+      <primitive object={glowRef.current} />
+      <primitive object={lineRef.current} />
     </group>
   );
 }
