@@ -978,16 +978,17 @@ export function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNo
 
   // Update camera position in store when user interacts
   useFrame(() => {
-    if (controls && controls.enabled) {
+    const orbitControls = controls as any;
+    if (orbitControls && orbitControls.enabled) {
       useSpiderStore.getState().setCameraPosition([
         camera.position.x,
         camera.position.y,
         camera.position.z,
       ]);
       useSpiderStore.getState().setCameraTarget([
-        controls.target.x,
-        controls.target.y,
-        controls.target.z,
+        orbitControls.target.x,
+        orbitControls.target.y,
+        orbitControls.target.z,
       ]);
     }
   });
