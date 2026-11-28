@@ -177,7 +177,14 @@ function JarvisCore({
       
       {/* Rotating rings */}
       {[0, 1, 2].map((ringIdx) => (
-        <mesh key={`ring-${ringIdx}`}>
+        <mesh
+          key={`ring-${ringIdx}`}
+          rotation={
+            ringIdx === 0 ? [Math.PI / 2, 0, 0] :
+            ringIdx === 1 ? [0, Math.PI / 2, 0] :
+            [Math.PI / 4, 0, 0]
+          }
+        >
           <torusGeometry args={[JARVIS_RADIUS * (1.15 + ringIdx * 0.18), 0.08, 16, RING_SEGMENTS]} />
           <meshPhysicalMaterial
             color={baseColor}
@@ -191,11 +198,6 @@ function JarvisCore({
             opacity={0.6 - ringIdx * 0.1}
             side={THREE.DoubleSide}
           />
-          <rotation>
-            {ringIdx === 0 ? Math.PI / 2 : 0}
-            {ringIdx === 1 ? 0 : Math.PI / 2}
-            {ringIdx === 2 ? Math.PI / 4 : 0}
-          </rotation>
         </mesh>
       ))}
       
