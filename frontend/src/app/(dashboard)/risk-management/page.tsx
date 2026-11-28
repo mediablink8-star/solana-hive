@@ -10,21 +10,12 @@ export default function RiskManagementPage() {
   const config = portfolio?.config;
 
   const riskMetrics = [
-<<<<<<< HEAD
     { label: 'Portfolio VaR (95%)', value: '2.3%', threshold: '< 5%', status: 'safe', icon: Shield },
     { label: 'Max Position Size', value: '18.5%', threshold: '< 20%', status: 'safe', icon: Target },
     { label: 'Correlation Risk', value: '0.34', threshold: '< 0.7', status: 'safe', icon: BarChart },
     { label: 'Leverage Ratio', value: '1.0x', threshold: '< 2.0x', status: 'safe', icon: Settings },
     { label: 'Liquidity Buffer', value: '15%', threshold: '> 10%', status: 'safe', icon: Shield },
     { label: 'Stop Loss Triggered', value: '0', threshold: '0', status: 'safe', icon: AlertTriangle },
-=======
-    { label: 'Portfolio VaR (95%)', value: '2.3%', threshold: '< 5%', status: 'safe' as const, icon: Shield },
-    { label: 'Max Position Size', value: '18.5%', threshold: '< 20%', status: 'safe' as const, icon: Target },
-    { label: 'Correlation Risk', value: '0.34', threshold: '< 0.7', status: 'safe' as const, icon: BarChart2 },
-    { label: 'Leverage Ratio', value: '1.0x', threshold: '< 2.0x', status: 'safe' as const, icon: Settings },
-    { label: 'Liquidity Buffer', value: '15%', threshold: '> 10%', status: 'safe' as const, icon: Shield },
-    { label: 'Stop Loss Triggered', value: '0', threshold: '0', status: 'safe' as const, icon: AlertTriangle },
->>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   ];
 
   return (
