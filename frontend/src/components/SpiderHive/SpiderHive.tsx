@@ -482,10 +482,8 @@ function ConnectionEdge({
   }, [sourcePos, targetPos]);
 
   const material = useMemo(() => 
-    new THREE.LineMaterial({
+    new THREE.LineBasicMaterial({
       color: sourceColor,
-      linewidth: 0.003,
-      dashed: false,
       transparent: true,
       opacity: 0.4 + edge.intensity * 0.5,
       blending: THREE.AdditiveBlending,
@@ -495,9 +493,8 @@ function ConnectionEdge({
   );
 
   const glowMaterial = useMemo(() => 
-    new THREE.LineMaterial({
+    new THREE.LineBasicMaterial({
       color: sourceColor,
-      linewidth: 0.012,
       transparent: true,
       opacity: 0.15 + edge.intensity * 0.25,
       blending: THREE.AdditiveBlending,
@@ -530,8 +527,8 @@ function ConnectionEdge({
 
   return (
     <group>
-      <line2 ref={glowRef} geometry={geometry} material={glowMaterial} />
-      <line2 ref={lineRef} geometry={geometry} material={material} />
+      <line ref={glowRef} geometry={geometry} material={glowMaterial} />
+      <line ref={lineRef} geometry={geometry} material={material} />
     </group>
   );
 }

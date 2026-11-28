@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { clsx } from 'clsx';
-import { Terminal, Filter, Download, Trash2, RefreshCw, ChevronUp, ChevronDown, Search, AlertTriangle, CheckCircle, Info, X } from 'lucide-react';
+import { Terminal, Filter, Download, Trash2, RefreshCw, ChevronUp, ChevronDown, Search, AlertTriangle, CheckCircle, Info, X, Play, Pause } from 'lucide-react';
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error'] as const;
 const LOG_SOURCES = ['system', 'api', 'websocket', 'engine', 'risk', 'execution', 'agents'] as const;
