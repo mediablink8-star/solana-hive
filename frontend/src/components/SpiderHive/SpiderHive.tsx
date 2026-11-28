@@ -3,14 +3,14 @@
 import React, { useRef, useEffect, useMemo, useState, useCallback } from 'react';
 import { Canvas, useFrame, useThree, extend } from '@react-three/fiber';
 import * as THREE from 'three';
-import { OrbitControls, LineMaterial } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge, Particle } from '@/types';
 import { useSpiderStore, useDataStore } from '@/store';
 import { clsx } from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
-extend({ OrbitControls, LineMaterial });
+extend({ OrbitControls });
 
 const NODE_RADIUS = 1.8;
 const JARVIS_RADIUS = 3.5;
@@ -482,7 +482,7 @@ function ConnectionEdge({
   }, [sourcePos, targetPos]);
 
   const material = useMemo(() => 
-    new LineMaterial({
+    new THREE.LineMaterial({
       color: sourceColor,
       linewidth: 0.003,
       dashed: false,
@@ -495,7 +495,7 @@ function ConnectionEdge({
   );
 
   const glowMaterial = useMemo(() => 
-    new LineMaterial({
+    new THREE.LineMaterial({
       color: sourceColor,
       linewidth: 0.012,
       transparent: true,
