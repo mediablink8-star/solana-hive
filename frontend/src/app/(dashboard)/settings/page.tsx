@@ -1,152 +1,134 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePortfolio, useWebSocket } from '@/hooks/useApi';
+import { useUIStore } from '@/store';
 import { clsx } from 'clsx';
+import { 
+  SlidersHorizontal, Wifi, Shield, Bell, Palette, 
+  Terminal, Key, Database, Moon, Monitor, 
+  ToggleLeft, ToggleRight, Save, Loader2
+} from 'lucide-react';
+
+const SETTINGS_SECTIONS = [
+  { id: 'general', label: 'General', icon: SlidersHorizontal, description: 'Core application settings' },
+  { id: 'connection', label: 'Connection', icon: Wifi, description: 'API and WebSocket configuration' },
+  { id: 'trading', label: 'Trading', icon: Terminal, description: 'Trading parameters and limits' },
+  { id: 'risk', label: 'Risk', icon: Shield, description: 'Risk management controls' },
+  { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme and display options' },
+  { id: 'notifications', label: 'Notifications', icon: Bell, description: 'Alert and notification preferences' },
+  { id: 'advanced', label: 'Advanced', icon: Database, description: 'Developer and debug settings' },
+];
 
 export default function SettingsPage() {
-  const { portfolioConfig } = usePortfolio();
-  const { wsConnected } = useWebSocket();
+  const { activeTab, setActiveTab } = useUIStore();
   const [activeSection, setActiveSection] = useState('general');
+  const [saving, setSaving] = useState(false);
 
-  const sections = [
-    { id: 'general', label: 'General', icon: 'settings' },
-    { id: 'connection', label: 'Connection', icon: 'wifi' },
-    { id: 'trading', label: 'Trading', icon: 'activity' },
-    { id: 'risk', label: 'Risk', icon: 'shield' },
-    { id: 'appearance', label: 'Appearance', icon: 'palette' },
-    { id: 'notifications', label: 'Notifications', icon: 'bell' },
-    { id: 'advanced', label: 'Advanced', icon: 'cpu' },
-  ];
-
-  const ICONS: Record<string, React.ReactNode> = {
-    settings: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" strokeWidth="1.5" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" strokeWidth="1" /></svg>,
-    wifi: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 12.55a11 11 0 0114.08 0" strokeWidth="1.5" /><path d="M1.42 9a16 16 0 0121.16 0" strokeWidth="1.5" /><path d="M8.53 16.11a6 6 0 016.94 0" strokeWidth="1.5" /><line x1="12" y1="20" x2="12.01" y2="20" strokeWidth="1.5" strokeLinecap="round" /></svg>,
-    activity: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>,
-    shield: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeWidth="1.5" /></svg>,
-    palette: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r="2.5" strokeWidth="1.5" /><circle cx="18.5" cy="10.5" r="2.5" strokeWidth="1.5" /><circle cx="8.5" cy="10.5" r="2.5" strokeWidth="1.5" /><circle cx="13.5" cy="14.5" r="2.5" strokeWidth="1.5" /></svg>,
-    bell: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" strokeWidth="1.5" /><path d="M13.73 21a2 2 0 01-3.46 0" strokeWidth="1.5" /></svg>,
-    cpu: <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2" strokeWidth="1.5" /><path d="M9 9h6M9 12h6M9 15h4" strokeWidth="1.5" strokeLinecap="round" /></svg>,
-  };
-
-  const renderSection = () => {
-    switch (activeSection) {
-      case 'general':
-        return <GeneralSettings />;
-      case 'connection':
-        return <ConnectionSettings />;
-      case 'trading':
-        return <TradingSettings portfolioConfig={portfolioConfig} />;
-      case 'risk':
-        return <RiskSettings />;
-      case 'appearance':
-        return <AppearanceSettings />;
-      case 'notifications':
-        return <NotificationSettings />;
-      case 'advanced':
-        return <AdvancedSettings />;
-      default:
-        return <GeneralSettings />;
-    }
+  const handleSave = async () => {
+    setSaving(true);
+    await new Promise(r => setTimeout(r, 1000));
+    setSaving(false);
   };
 
   return (
     <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Settings</h1>
-            <p className="text-hive-textDim mt-1">Configure your trading terminal preferences</p>
-          </div>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Settings</h1>
+          <p className="text-hive-textDim mt-1">Configure your SOLANA HIVE experience</p>
         </div>
+        <button onClick={handleSave} disabled={saving} className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-cyan/30 bg-cyan/5 text-cyan hover:bg-cyan/10 transition-colors disabled:opacity-50">
+          <Save className="w-4 h-4" />
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Save Changes'}
+        </button>
+      </div>
 
-        <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 overflow-hidden">
-          <div className="flex flex-col lg:flex-row">
-            <div className="lg:w-52 border-r border-hive-border/50 p-4">
-              <nav className="space-y-1" role="navigation" aria-label="Settings sections">
-                {sections.map((section) => (
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Sidebar Navigation */}
+        <div className="lg:col-span-1">
+          <div className="glass rounded-2xl border border-hive-border/50 p-3 sticky top-24 h-fit">
+            <nav className="space-y-1" role="navigation" aria-label="Settings sections">
+              {SETTINGS_SECTIONS.map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                return (
                   <button
                     key={section.id}
                     onClick={() => setActiveSection(section.id)}
                     className={clsx(
                       'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-200',
-                      activeSection === section.id
-                        ? 'bg-gradient-to-r from-cyan/10 to-purple/10 text-cyan border border-cyan/30 shadow-glow-cyan'
-                        : 'text-hive-textDim hover:text-hive-text hover:bg-hive-bgCardHover/50'
+                      isActive
+                        ? 'bg-gradient-to-r from-cyan/10 to-purple/10 text-cyan border border-cyan/30'
+                        : 'text-hive-textMuted hover:text-hive-text hover:bg-hive-bgCard/50'
                     )}
                   >
-                    <span className="flex-shrink-0" aria-hidden="true">{ICONS[section.icon]}</span>
-                    <span className="font-medium truncate">{section.label}</span>
+                    <div className={clsx('w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0', isActive ? 'bg-cyan/20' : 'bg-hive-bg/50')}>
+                      <Icon className={clsx('w-4 h-4', isActive ? 'text-cyan' : 'text-hive-textMuted')} />
+                    </div>
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="font-medium text-sm truncate">{section.label}</p>
+                      <p className="text-[10px] text-hive-textDim truncate">{section.description}</p>
+                    </div>
                   </button>
-                ))}
-              </nav>
-              
-              <div className="mt-8 pt-6 border-t border-hive-border/50">
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-hive-bgCardHover/50 border border-hive-border/50">
-                  <span className={`w-2 h-2 rounded-full ${wsConnected ? 'bg-green animate-pulse' : 'bg-red'}`} />
-                  <span className={`text-xs font-mono ${wsConnected ? 'text-green' : 'text-red'}`}>
-                    {wsConnected ? 'CONNECTED' : 'OFFLINE'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 p-6 lg:p-8 overflow-y-auto">
-              {renderSection()}
-            </div>
+                );
+              })}
+            </nav>
           </div>
         </div>
+
+        {/* Settings Content */}
+        <div className="lg:col-span-3">
+          {activeSection === 'general' && (
+            <GeneralSettings />
+          )}
+          {activeSection === 'connection' && (
+            <ConnectionSettings />
+          )}
+          {activeSection === 'trading' && (
+            <TradingSettings />
+          )}
+          {activeSection === 'risk' && (
+            <RiskSettings />
+          )}
+          {activeSection === 'appearance' && (
+            <AppearanceSettings />
+          )}
+          {activeSection === 'notifications' && (
+            <NotificationsSettings />
+          )}
+          {activeSection === 'advanced' && (
+            <AdvancedSettings />
+          )}
+        </div>
       </div>
+    </div>
   );
 }
 
-
-
 function GeneralSettings() {
+  const [autoStart, setAutoStart] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [compactMode, setCompactMode] = useState(false);
+  const [language, setLanguage] = useState('en');
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">General Settings</h2>
-        <p className="text-hive-textDim">Basic application preferences and information</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Application Info</h3>
-          <div className="space-y-3">
-            <InfoRow label="Application" value="SOLANA HIVE Trading Terminal" />
-            <InfoRow label="Version" value="2.0.0" />
-            <InfoRow label="Build Date" value={new Date().toLocaleDateString()} />
-            <InfoRow label="Mode" value="Paper Trading Only" highlight />
-            <InfoRow label="Live Trading" value="DISABLED" />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Default Preferences</h3>
-          <div className="space-y-4">
-            <SettingToggle label="Auto-refresh data" description="Automatically refresh market data and portfolio" defaultChecked />
-            <SettingToggle label="Show notifications" description="Display toast notifications for events" defaultChecked />
-            <SettingToggle label="Animations" description="Enable UI animations and transitions" defaultChecked />
-            <SettingToggle label="Compact mode" description="Reduce spacing for more data density" />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Data Management</h3>
-          <div className="flex flex-wrap gap-3">
-            <button className="bg-hive-bgCardHover/50 px-4 py-2 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" strokeWidth="1.5" /><polyline points="17 8 12 3 7 8" strokeWidth="1.5" /><line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.5" /></svg>
-              Export Data
-            </button>
-            <button className="bg-hive-bgCardHover/50 px-4 py-2 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" strokeWidth="1.5" /><polyline points="7 8 12 3 17 8" strokeWidth="1.5" /><line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.5" /></svg>
-              Import Data
-            </button>
-            <button className="bg-hive-bgCardHover/50 px-4 py-2 rounded-xl border border-red/30 hover:border-red/50 transition-colors text-sm font-medium flex items-center gap-2 text-red">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" strokeWidth="1.5" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeWidth="1.5" /></svg>
-              Clear Local Data
-            </button>
-          </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <SlidersHorizontal className="w-5 h-5 text-cyan" />
+        General Settings
+      </h2>
+      <div className="space-y-4">
+        <SettingToggle label="Auto-start on login" description="Automatically start the trading engine when you log in" value={autoStart} onChange={setAutoStart} />
+        <SettingToggle label="Sound notifications" description="Play sounds for trade executions and alerts" value={soundEnabled} onChange={setSoundEnabled} />
+        <SettingToggle label="Compact mode" description="Reduce spacing for more information density" value={compactMode} onChange={setCompactMode} />
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Language</label>
+          <select value={language} onChange={e => setLanguage(e.target.value)} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50">
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="ja">Japanese</option>
+          </select>
         </div>
       </div>
     </div>
@@ -156,109 +138,57 @@ function GeneralSettings() {
 function ConnectionSettings() {
   const [apiUrl, setApiUrl] = useState('https://solana-hive-api.onrender.com');
   const [wsUrl, setWsUrl] = useState('wss://solana-hive-api.onrender.com');
-  
+  const [reconnectEnabled, setReconnectEnabled] = useState(true);
+  const [timeout, setTimeout] = useState(30000);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Connection Settings</h2>
-        <p className="text-hive-textDim">Configure backend API and WebSocket connections</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">API Endpoint</h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-hive-textDim text-sm mb-2">API Base URL</label>
-              <input
-                type="url"
-                value={apiUrl}
-                onChange={(e) => setApiUrl(e.target.value)}
-                className="w-full bg-hive-bgCardHover/50 rounded-xl px-4 py-3 text-hive-text placeholder-hive-textDim border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
-                placeholder="https://api.example.com"
-              />
-              <p className="text-hive-textDim text-xs">REST API endpoint for all HTTP requests</p>
-            </div>
-            <div>
-              <label className="block text-hive-textDim text-sm mb-2">WebSocket URL</label>
-              <input
-                type="url"
-                value={wsUrl}
-                onChange={(e) => setWsUrl(e.target.value)}
-                className="w-full bg-hive-bgCardHover/50 rounded-xl px-4 py-3 text-hive-text placeholder-hive-textDim border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
-                placeholder="wss://api.example.com"
-              />
-              <p className="text-hive-textDim text-xs">WebSocket endpoint for real-time updates</p>
-            </div>
-          </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Wifi className="w-5 h-5 text-cyan" />
+        Connection Settings
+      </h2>
+      <div className="space-y-4">
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">API Endpoint</label>
+          <input type="url" value={apiUrl} onChange={e => setApiUrl(e.target.value)} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50 font-mono text-sm" />
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Connection Status</h3>
-          <div className="bg-hive-bgCardHover/50 rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 rounded-full bg-green animate-pulse" />
-                <span className="font-medium text-hive-text">Backend API</span>
-              </div>
-              <span className="text-green font-mono text-sm">● CONNECTED</span>
-            </div>
-          </div>
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">WebSocket Endpoint</label>
+          <input type="url" value={wsUrl} onChange={e => setWsUrl(e.target.value)} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50 font-mono text-sm" />
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">CORS & Security</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Allow localhost" description="Allow connections from localhost for development" defaultChecked />
-            <SettingToggle label="Enforce HTTPS" description="Require HTTPS for production connections" defaultChecked />
-            <SettingToggle label="WebSocket auto-reconnect" description="Automatically reconnect on disconnect" defaultChecked />
-          </div>
+        <SettingToggle label="Auto-reconnect" description="Automatically reconnect WebSocket on disconnect" value={reconnectEnabled} onChange={setReconnectEnabled} />
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Request Timeout (ms)</label>
+          <input type="number" value={timeout} onChange={e => setTimeout(Number(e.target.value))} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50 font-mono text-sm" />
         </div>
       </div>
     </div>
   );
 }
 
-function TradingSettings({ portfolioConfig }: { portfolioConfig: any }) {
+function TradingSettings() {
+  const [autoTrade, setAutoTrade] = useState(true);
+  const [maxSlippage, setMaxSlippage] = useState(0.5);
+  const [priorityFee, setPriorityFee] = useState(0.001);
+  const [mevProtection, setMevProtection] = useState(true);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Trading Settings</h2>
-        <p className="text-hive-textDim">Configure paper trading parameters</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Paper Trading Parameters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SettingInput label="Starting Capital (SOL)" value={1.0} type="number" step={0.1} readonly />
-            <SettingInput label="Max Positions" value={portfolioConfig?.max_positions || 3} type="number" min={1} max={10} readonly />
-            <SettingInput label="Max Allocation per Position (%)" value={Math.round((portfolioConfig?.max_alloc || 0.1) * 100)} type="number" min={1} max={100} readonly />
-            <SettingInput label="Stop Loss (%)" value={Math.round((portfolioConfig?.stop_loss || 0.15) * 100)} type="number" min={1} max={50} readonly />
-            <SettingInput label="Take Profit (%)" value={Math.round((portfolioConfig?.take_profit || 0.3) * 100)} type="number" min={1} max={200} readonly />
-            <SettingInput label="Default Trade Size (% of capital)" value={10} type="number" min={1} max={100} />
-          </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Terminal className="w-5 h-5 text-cyan" />
+        Trading Settings
+      </h2>
+      <div className="space-y-4">
+        <SettingToggle label="Auto-trading enabled" description="Allow agents to execute trades automatically" value={autoTrade} onChange={setAutoTrade} />
+        <SettingToggle label="MEV protection" description="Use Jito bundles for frontrunning protection" value={mevProtection} onChange={setMevProtection} />
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Max Slippage (%)</label>
+          <input type="range" min="0.1" max="2" step="0.1" value={maxSlippage} onChange={e => setMaxSlippage(Number(e.target.value))} className="w-full accent-cyan" />
+          <p className="text-hive-textDim text-xs mt-1">{maxSlippage}%</p>
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Execution Settings</h3>
-          <div className="space-y-4">
-            <SettingToggle label="Simulate slippage" description="Apply 1% slippage simulation" defaultChecked />
-            <SettingToggle label="Simulate fees" description="Apply 0.25% trading fee simulation" defaultChecked />
-            <SettingToggle label="Partial exits enabled" description="Allow partial position exits" defaultChecked />
-            <SettingToggle label="Auto-close at stop loss" description="Automatically close positions at stop loss" defaultChecked />
-            <SettingToggle label="Auto-close at take profit" description="Automatically close positions at take profit" defaultChecked />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Strategy Filters</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Minimum liquidity filter" description="Only trade tokens with $100k+ liquidity" defaultChecked />
-            <SettingToggle label="Maximum market cap" description="Skip tokens above $100M market cap" />
-            <SettingToggle label="Exclude stablecoins" description="Don't trade USDC, USDT, etc." defaultChecked />
-            <SettingToggle label="New token delay" description="Wait 5 minutes after token discovery" defaultChecked />
-          </div>
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Priority Fee (SOL)</label>
+          <input type="number" step="0.0001" min="0" max="0.01" value={priorityFee} onChange={e => setPriorityFee(Number(e.target.value))} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50 font-mono text-sm" />
         </div>
       </div>
     </div>
@@ -266,252 +196,147 @@ function TradingSettings({ portfolioConfig }: { portfolioConfig: any }) {
 }
 
 function RiskSettings() {
+  const [maxPositions, setMaxPositions] = useState(10);
+  const [maxAlloc, setMaxAlloc] = useState(20);
+  const [stopLoss, setStopLoss] = useState(15);
+  const [takeProfit, setTakeProfit] = useState(50);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Risk Settings</h2>
-        <p className="text-hive-textDim">Configure risk management rules</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Risk Rules</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Enable stop loss" description="Automatically exit positions at stop loss" defaultChecked />
-            <SettingToggle label="Enable take profit" description="Automatically exit positions at take profit" defaultChecked />
-            <SettingToggle label="Max position size enforcement" description="Strictly enforce max allocation per position" defaultChecked />
-            <SettingToggle label="Daily loss limit" description="Stop trading after 10% daily loss" defaultChecked />
-            <SettingToggle label="Cooldown after losses" description="Wait 1 hour after 3 consecutive losses" defaultChecked />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Risk Parameters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SettingInput label="Max Daily Loss (%)" value={10} type="number" min={1} max={50} />
-            <SettingInput label="Cooldown Period (hours)" value={1} type="number" min={0} max={24} />
-            <SettingInput label="Max Consecutive Losses" value={3} type="number" min={1} max={10} />
-            <SettingInput label="Max Drawdown (%)" value={20} type="number" min={5} max={50} />
-          </div>
-        </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Shield className="w-5 h-5 text-cyan" />
+        Risk Management
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <RiskSlider label="Max Positions" value={maxPositions} min={1} max={20} unit="" onChange={setMaxPositions} />
+        <RiskSlider label="Max Allocation per Position" value={maxAlloc} min={5} max={50} unit="%" onChange={setMaxAlloc} />
+        <RiskSlider label="Stop Loss" value={stopLoss} min={5} max={50} unit="%" onChange={setStopLoss} />
+        <RiskSlider label="Take Profit" value={takeProfit} min={20} max={200} unit="%" onChange={setTakeProfit} />
       </div>
     </div>
   );
 }
 
 function AppearanceSettings() {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState('dark');
+  const [accentColor, setAccentColor] = useState('cyan');
   const [animations, setAnimations] = useState(true);
-  
+  const [particles, setParticles] = useState(true);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Appearance</h2>
-        <p className="text-hive-textDim">Customize the look and feel of the terminal</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Theme</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <button 
-              onClick={() => setTheme('dark')}
-              className={`p-6 rounded-xl border-2 transition-all ${theme === 'dark' ? 'border-cyan bg-cyan/10' : 'border-hive-border/50 hover:border-cyan/30'}`}
-            >
-              <div className="w-16 h-16 rounded-xl bg-hive-bgCardHover/50 flex items-center justify-center mx-auto mb-3">
-                <svg className="w-8 h-8 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth="1.5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeWidth="1.5" /></svg>
-              </div>
-              <p className="font-medium text-hive-text">Dark</p>
-              <p className="text-hive-textDim text-sm">Default theme</p>
-            </button>
-            <button 
-              onClick={() => setTheme('light')}
-              className={`p-6 rounded-xl border-2 transition-all ${theme === 'light' ? 'border-cyan bg-cyan/10' : 'border-hive-border/50 hover:border-cyan/30'}`}
-            >
-              <div className="w-16 h-16 rounded-xl bg-hive-bgCardHover/50 flex items-center justify-center mx-auto mb-3">
-                <svg className="w-8 h-8 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" strokeWidth="1.5" /><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" strokeWidth="1.5" /></svg>
-              </div>
-              <p className="font-medium text-hive-text">Light</p>
-              <p className="text-hive-textDim text-sm">Bright theme</p>
-            </button>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Palette className="w-5 h-5 text-cyan" />
+        Appearance
+      </h2>
+      <div className="space-y-4">
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Theme</label>
+          <div className="flex gap-2">
+            {['dark', 'light', 'system'].map(t => (
+              <button key={t} onClick={() => setTheme(t)} className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${theme === t ? 'bg-cyan/20 text-cyan border border-cyan/30' : 'bg-hive-bg/50 text-hive-textMuted hover:bg-hive-bgCard/50'}`}>{t.charAt(0).toUpperCase() + t.slice(1)}</button>
+            ))}
           </div>
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Animations</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Enable animations" description="UI transitions and micro-interactions" checked={animations} onChange={setAnimations} />
-            <SettingToggle label="Reduced motion" description="Disable non-essential animations for accessibility" />
-            <SettingToggle label="Particle effects" description="Show particle animations in Spider Hive" checked={animations} onChange={setAnimations} />
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Accent Color</label>
+          <div className="flex gap-2">
+            {['cyan', 'purple', 'green', 'orange', 'red'].map(c => (
+              <button key={c} onClick={() => setAccentColor(c)} className={`w-10 h-10 rounded-lg border-2 transition-colors ${accentColor === c ? 'border-white scale-110' : 'border-hive-border/50 hover:border-hive-border'}`} style={{ backgroundColor: `var(--hive-${c})` }} />
+            ))}
           </div>
         </div>
+        <SettingToggle label="Animations" description="Enable UI animations and transitions" value={animations} onChange={setAnimations} />
+        <SettingToggle label="Particle effects" description="Show background particle animations" value={particles} onChange={setParticles} />
       </div>
     </div>
   );
 }
 
-function NotificationSettings() {
-  const [notifications, setNotifications] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(true);
-  const [refreshInterval, setRefreshInterval] = useState(30);
-  
+function NotificationsSettings() {
+  const [tradeAlerts, setTradeAlerts] = useState(true);
+  const [riskAlerts, setRiskAlerts] = useState(true);
+  const [systemAlerts, setSystemAlerts] = useState(false);
+  const [emailAlerts, setEmailAlerts] = useState(false);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Notifications</h2>
-        <p className="text-hive-textDim">Configure notification preferences</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Notification Types</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Trade executions" description="Notify when paper trades are executed" defaultChecked />
-            <SettingToggle label="Risk alerts" description="Stop loss and take profit triggers" defaultChecked />
-            <SettingToggle label="New token discoveries" description="Notify when scanner finds new tokens" defaultChecked />
-            <SettingToggle label="Agent decisions" description="Notify on BUY/REJECT recommendations" />
-            <SettingToggle label="System health" description="Backend connectivity and errors" defaultChecked />
-          </div>
-        </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Delivery Settings</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Browser notifications" description="Show native browser notifications" defaultChecked />
-            <SettingToggle label="Sound alerts" description="Play sound for important events" />
-            <SettingToggle label="Auto-refresh" description="Automatically refresh data" checked={autoRefresh} onChange={setAutoRefresh} />
-            <div className="flex items-center gap-4">
-              <label className="text-hive-textDim text-sm w-32">Refresh interval</label>
-              <select 
-                value={refreshInterval} 
-                onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                className="flex-1 bg-hive-bgCardHover/50 rounded-xl px-4 py-2 text-hive-text border border-hive-border/50 focus:outline-none focus:border-cyan/50"
-              >
-                <option value={10}>10 seconds</option>
-                <option value={30}>30 seconds</option>
-                <option value={60}>1 minute</option>
-                <option value={300}>5 minutes</option>
-              </select>
-            </div>
-          </div>
-        </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Bell className="w-5 h-5 text-cyan" />
+        Notifications
+      </h2>
+      <div className="space-y-4">
+        <SettingToggle label="Trade executions" description="Notify when trades are executed" value={tradeAlerts} onChange={setTradeAlerts} />
+        <SettingToggle label="Risk alerts" description="Notify when risk limits are approached" value={riskAlerts} onChange={setRiskAlerts} />
+        <SettingToggle label="System alerts" description="Notify for system events and maintenance" value={systemAlerts} onChange={setSystemAlerts} />
+        <SettingToggle label="Email notifications" description="Send notifications via email" value={emailAlerts} onChange={setEmailAlerts} />
       </div>
     </div>
   );
 }
 
 function AdvancedSettings() {
+  const [debugMode, setDebugMode] = useState(false);
+  const [logLevel, setLogLevel] = useState('info');
+  const [dataRetention, setDataRetention] = useState(30);
+
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h2 className="text-gradient-cyan font-display font-bold text-2xl mb-2">Advanced</h2>
-        <p className="text-hive-textDim">Developer and experimental settings</p>
-      </div>
-
-      <div className="bg-hive-bgCardHover/50 rounded-2xl border border-hive-border/50 p-6 space-y-6">
-        <div>
-          <h3 className="font-semibold text-hive-text mb-4">Debug</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Debug mode" description="Show debug information in console" />
-            <SettingToggle label="Verbose logging" description="Log all API requests and responses" />
-            <SettingToggle label="Performance monitor" description="Show FPS and render times" />
-          </div>
+    <div className="glass rounded-2xl border border-hive-border/50 p-6 space-y-6">
+      <h2 className="font-semibold text-hive-text flex items-center gap-2">
+        <Database className="w-5 h-5 text-cyan" />
+        Advanced Settings
+      </h2>
+      <div className="space-y-4">
+        <SettingToggle label="Debug mode" description="Enable verbose logging and debug panels" value={debugMode} onChange={setDebugMode} />
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Log Level</label>
+          <select value={logLevel} onChange={e => setLogLevel(e.target.value)} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50">
+            <option value="debug">Debug</option>
+            <option value="info">Info</option>
+            <option value="warn">Warn</option>
+            <option value="error">Error</option>
+          </select>
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Experimental Features</h3>
-          <div className="space-y-3">
-            <SettingToggle label="Live trading (DISABLED)" description="Enable real trading - NOT AVAILABLE" disabled />
-            <SettingToggle label="Multi-wallet support" description="Manage multiple paper trading wallets" />
-            <SettingToggle label="Custom strategies" description="Load custom trading strategies" />
-          </div>
+        <div className="glass rounded-xl p-4 border border-hive-border/50">
+          <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">Data Retention (days)</label>
+          <input type="number" value={dataRetention} onChange={e => setDataRetention(Number(e.target.value))} className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-2 text-hive-text focus:outline-none focus:border-cyan/50 font-mono text-sm" />
         </div>
-
-        <div className="pt-6 border-t border-hive-border/50">
-          <h3 className="font-semibold text-hive-text mb-4">Data Export</h3>
-          <div className="flex flex-wrap gap-3">
-            <button className="bg-hive-bgCardHover/50 px-4 py-2 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" strokeWidth="1.5" /><polyline points="17 8 12 3 7 8" strokeWidth="1.5" /><line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.5" /></svg>
-              Export All Data (JSON)
-            </button>
-            <button className="bg-hive-bgCardHover/50 px-4 py-2 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors text-sm font-medium flex items-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" strokeWidth="1.5" /><polyline points="17 8 12 3 7 8" strokeWidth="1.5" /><line x1="12" y1="3" x2="12" y2="15" strokeWidth="1.5" /></svg>
-              Export Trades (CSV)
-            </button>
-            <button className="bg-red/10 px-4 py-2 rounded-xl border border-red/30 hover:border-red/50 transition-colors text-sm font-medium flex items-center gap-2 text-red">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6" strokeWidth="1.5" /><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" strokeWidth="1.5" /></svg>
-              Factory Reset
-            </button>
-          </div>
+        <div className="glass rounded-xl p-4 border border-red/30 bg-red/5">
+          <h3 className="font-medium text-red mb-2">Danger Zone</h3>
+          <button className="px-4 py-2 bg-red/20 text-red rounded-lg hover:bg-red/30 transition-colors text-sm font-mono">Reset All Settings</button>
         </div>
       </div>
     </div>
   );
 }
 
-function InfoRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function SettingToggle({ label, description, value, onChange }: { label: string; description: string; value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <div className="flex items-center justify-between py-2 border-b border-hive-border/50">
-      <span className="text-hive-textDim">{label}</span>
-      <span className={`font-mono ${highlight ? 'font-semibold text-gradient-cyan' : 'text-hive-text'}`}>{value}</span>
-    </div>
-  );
-}
-
-function SettingToggle({ label, description, defaultChecked, checked, onChange, disabled }: { 
-  label: string; 
-  description: string; 
-  defaultChecked?: boolean; 
-  checked?: boolean; 
-  onChange?: (v: boolean) => void; 
-  disabled?: boolean;
-}) {
-  const [isOn, setIsOn] = useState(defaultChecked || false);
-  const handleChange = (v: boolean) => { setIsOn(v); onChange?.(v); };
-  const value = checked !== undefined ? checked : isOn;
-  
-  return (
-    <label className={`flex items-center justify-between cursor-pointer ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
+    <div className="glass rounded-xl p-4 border border-hive-border/50 flex items-center justify-between">
       <div>
         <p className="font-medium text-hive-text">{label}</p>
-        <p className="text-hive-textDim text-sm">{description}</p>
+        <p className="text-hive-textDim text-xs">{description}</p>
       </div>
       <button
-        onClick={() => !disabled && handleChange(!value)}
-        disabled={disabled}
-        className={`relative w-12 h-7 rounded-full transition-colors ${value ? 'bg-gradient-to-r from-cyan to-purple' : 'bg-hive-border/50'}`}
-        aria-pressed={value}
+        onClick={() => onChange(!value)}
+        className={clsx('relative w-12 h-7 rounded-full transition-colors', value ? 'bg-cyan' : 'bg-hive-border')}
+        role="switch"
+        aria-checked={value}
       >
-        <span className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform ${value ? 'translate-x-5' : 'translate-x-0'}`} />
+        <span className={clsx('absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-md transition-transform', value ? 'translate-x-5' : 'translate-x-0.5')} />
       </button>
-    </label>
+    </div>
   );
 }
 
-function SettingInput({ label, value, type, step, min, max, readonly, disabled }: { 
-  label: string; 
-  value: number | string; 
-  type?: 'number' | 'text';
-  step?: number;
-  min?: number;
-  max?: number;
-  readonly?: boolean;
-  disabled?: boolean;
-}) {
+function RiskSlider({ label, value, min, max, unit, onChange }: { label: string; value: number; min: number; max: number; unit: string; onChange: (v: number) => void }) {
   return (
-    <div>
-      <label className="block text-hive-textDim text-sm mb-2">{label}</label>
-      <input
-        type={type || 'text'}
-        value={value}
-        onChange={() => {}}
-        step={step}
-        min={min}
-        max={max}
-        readOnly={readonly}
-        disabled={disabled}
-        className={`w-full bg-hive-bgCardHover/50 rounded-xl px-4 py-3 text-hive-text placeholder-hive-textDim border border-hive-border/50 focus:outline-none focus:border-cyan/50 ${readonly ? 'bg-hive-bg/50 text-hive-textDim' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-      />
+    <div className="glass rounded-xl p-4 border border-hive-border/50">
+      <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider block mb-2">{label}</label>
+      <div className="flex items-center gap-4">
+        <input type="range" min={min} max={max} value={value} onChange={e => onChange(Number(e.target.value))} className="flex-1 accent-cyan" />
+        <span className="text-lg font-bold font-mono text-cyan w-16 text-right">{value}{unit}</span>
+      </div>
     </div>
   );
 }

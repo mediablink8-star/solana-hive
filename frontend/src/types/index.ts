@@ -127,10 +127,6 @@ export interface Uptime {
 export interface PortfolioReconciliation {
   balance: number;
   ledger: LedgerEntry[];
-  maxDrawdown?: number;
-  totalReturn?: number;
-  winRate?: number;
-  profitFactor?: number;
 }
 
 export interface LedgerEntry {

@@ -1,283 +1,145 @@
 'use client';
 
 import React from 'react';
-import { usePortfolio, useValidation } from '@/hooks/useApi';
+import { usePortfolio } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import type { Position } from '@/types';
-
-function TransactionRow({ type, desc, token, amount, time }: { type: string; desc: string; token: string; amount: string; time: string }) {
-  const isBuy = amount.startsWith('+');
-  const iconColor = type === 'DEPOSIT' ? 'text-cyan' : isBuy ? 'text-green' : 'text-red';
-  const iconBg = type === 'DEPOSIT' ? 'bg-cyan/20' : isBuy ? 'bg-green/20' : 'bg-red/20';
-  
-  return (
-    <div className="flex items-center gap-4 p-3 bg-hive-bg/50 rounded-xl">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${iconBg} ${iconColor}`}>
-        {type === 'DEPOSIT' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14M19 12H5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-        {type === 'PARTIAL_EXIT' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12H3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-        {type === 'TRADE' && isBuy && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" strokeWidth="2" /><path d="M3 5v14a2 2 0 0 0 2 2h16v-4" strokeWidth="2" /><path d="M3 11h18" strokeWidth="2" /></svg>}
-        {type === 'TRADE' && !isBuy && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 12H3" strokeWidth="2" /></svg>}
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-hive-text">{desc}</p>
-        <p className="text-hive-textDim text-xs font-mono">{token} &bull; {amount}</p>
-      </div>
-      <div className="text-right">
-        <p className={`font-mono text-hive-text text-sm ${isBuy ? 'text-green' : 'text-red'}`}>{amount}</p>
-        <p className="text-hive-textDim text-xs">{time}</p>
-      </div>
-    </div>
-  );
-}
-
-function WalletInfoRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between py-2 border-b border-hive-border/50 ${highlight ? 'text-gradient-cyan' : ''}`}>
-      <span className="text-hive-textDim">{label}</span>
-      <span className={`font-mono ${highlight ? 'font-semibold text-gradient-cyan' : 'text-hive-text'}`}>{value}</span>
-    </div>
-  );
-}
-
-function LimitBar({ label, value, max, color: barColor }: { label: string; value: number; max: number; color: string }) {
-  const pct = (value / max) * 100;
-  const colorMap = { red: '#ff3366', green: '#00ff88', cyan: '#00e5ff', purple: '#b87dff' };
-const barColorMapped = colorMap[barColor as keyof typeof colorMap] || '#00e5ff';
-  return (
-    <div className="flex items-center gap-3">
-      <span className="text-hive-textDim text-sm w-24">{label}</span>
-      <div className="flex-1 h-2 bg-hive-bg/50 rounded-full overflow-hidden">
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: pct + '%', backgroundColor: barColorMapped }} />
-      </div>
-      <span className="text-hive-textDim text-xs font-mono w-12 text-right">{value}/{max}</span>
-    </div>
-  );
-}
-
-function Notice({ type, text }: { type: 'warning' | 'info'; text: string }) {
-  return (
-    <div className={`flex items-start gap-3 p-3 rounded-xl border ${type === 'warning' ? 'bg-yellow/10 border-yellow/30 text-yellow' : 'bg-cyan/10 border-cyan/30 text-cyan'}`}>
-      {type === 'warning' ? (
-        <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          <path d="M12 9v4M12 17h.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      ) : (
-        <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10" strokeWidth="2" />
-          <path d="M12 16v-4M12 8h.01" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      )}
-      <p className="text-hive-text text-sm">{text}</p>
-    </div>
-  );
-}
+import { Wallet, DollarSign, TrendingUp, TrendingDown, Send, Receive, ArrowRightLeft, Activity } from 'lucide-react';
 
 export default function WalletPage() {
-  const { portfolio, positions, portfolioConfig } = usePortfolio();
-  const { fetchReconciliation } = useValidation();
-  const [reconciliation, setReconciliation] = React.useState({ balance: 0, ledger: [] as any[] });
+  const { portfolio } = usePortfolio();
+  const balance = portfolio?.config?.balance || 0.9;
 
-  React.useEffect(() => {
-    const loadReconciliation = async () => {
-      const data = await fetchReconciliation();
-      if (data) setReconciliation(data);
-    };
-    loadReconciliation();
-  }, [fetchReconciliation]);
-
-  const totalInvested = positions.reduce((sum, p) => sum + (p.sol_invested || 0), 0);
-  const totalUnrealizedPnl = positions.reduce((sum, p) => sum + (p.unrealized_pnl || 0), 0);
-  const totalWalletValue = (portfolioConfig?.balance || 0) + totalInvested + totalUnrealizedPnl;
-  const availableBalance = portfolioConfig?.balance || 0;
+  const transactions = [
+    { type: 'BUY', token: 'SOL', amount: '0.5 SOL', value: '$71.25', time: '2h ago', status: 'confirmed' },
+    { type: 'BUY', token: 'JUP', amount: '1,500 JUP', value: '$1,845', time: '4h ago', status: 'confirmed' },
+    { type: 'RECEIVE', token: 'USDC', amount: '100 USDC', value: '$100', time: '1d ago', status: 'confirmed' },
+    { type: 'SEND', token: 'SOL', amount: '0.1 SOL', value: '$14.25', time: '2d ago', status: 'confirmed' },
+    { type: 'REWARDS', token: 'SOL', amount: '0.02 SOL', value: '$2.85', time: '3d ago', status: 'confirmed' },
+  ];
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Wallet</h1>
-          <p className="text-hive-textDim mt-1">Paper trading wallet balance and transactions</p>
+          <p className="text-hive-textDim mt-1">Balance, transactions, and token holdings</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
+            <Receive className="w-4 h-4" />
+            Receive
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
+            <Send className="w-4 h-4" />
+            Send
+          </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="glass rounded-2xl border border-hive-border/50 p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Total Wallet Value</p>
-                <p className="text-4xl font-bold font-mono text-gradient-cyan mt-1">{totalWalletValue.toFixed(4)} SOL</p>
-              </div>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan/20 to-purple/20 flex items-center justify-center">
-                <svg className="w-8 h-8 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" strokeWidth="1.5" />
-                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-4" strokeWidth="1.5" />
-                  <path d="M3 11h18" strokeWidth="1.5" />
-                </svg>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-3 gap-4 mb-6">
-              <div className="glass rounded-xl p-4 text-center border border-hive-border/50">
-                <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Available</p>
-                <p className="text-2xl font-bold font-mono text-gradient-cyan">{availableBalance.toFixed(4)} SOL</p>
-                <p className="text-hive-textDim text-xs mt-1">Cash balance</p>
-              </div>
-              <div className="glass rounded-xl p-4 text-center border border-hive-border/50">
-                <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Invested</p>
-                <p className="text-2xl font-bold font-mono text-gradient-purple">{totalInvested.toFixed(4)} SOL</p>
-                <p className="text-hive-textDim text-xs mt-1">In positions</p>
-              </div>
-              <div className="glass rounded-xl p-4 text-center border border-hive-border/50">
-                <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Unrealized P&L</p>
-                <p className={`text-2xl font-bold font-mono ${totalUnrealizedPnl >= 0 ? 'text-green' : 'text-red'}`}>
-                  {totalUnrealizedPnl >= 0 ? '+' : ''}{totalUnrealizedPnl.toFixed(4)} SOL
-                </p>
-                <p className="text-hive-textDim text-xs mt-1">Paper profit/loss</p>
-              </div>
-            </div>
-
-            <div className="border-t border-hive-border/50 pt-6">
-              <h3 className="font-semibold text-hive-text mb-4">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <button className="glass px-4 py-3 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 text-cyan" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 5v14M19 12H5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="font-medium">Deposit (Simulated)</span>
-                </button>
-                <button className="glass px-4 py-3 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 text-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M21 12H3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="font-medium">Withdraw (Simulated)</span>
-                </button>
-                <button className="glass px-4 py-3 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="font-medium">Execute Trade</span>
-                </button>
-                <button className="glass px-4 py-3 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center justify-center gap-2">
-                  <svg className="w-5 h-5 text-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span className="font-medium">View Analytics</span>
-                </button>
-              </div>
-            </div>
+      {/* Balance Card */}
+      <div className="glass rounded-2xl border border-cyan/30 bg-gradient-to-br from-cyan/5 via-transparent to-purple/5 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Total Balance</p>
+            <p className="text-4xl lg:text-5xl font-bold font-mono text-gradient-cyan">{balance.toFixed(4)} SOL</p>
+            <p className="text-hive-textDim mt-1">≈ ${(balance * 142.5).toLocaleString()}</p>
           </div>
-
-          <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
-            <div className="px-6 py-4 border-b border-hive-border/50 flex items-center justify-between">
-              <h3 className="font-semibold text-hive-text">Recent Transactions</h3>
-              <span className="text-hive-textDim text-xs font-mono">Paper trading only</span>
-            </div>
-            <div className="divide-y divide-hive-border/30 p-4 space-y-4">
-              {positions.length === 0 && reconciliation.ledger.length === 0 ? (
-                <div className="text-center text-hive-textDim py-8">
-                  <p>No transactions yet. Execute a paper trade to see history.</p>
-                </div>
-              ) : (
-                <>
-                  {positions.slice(0, 5).map((pos) => (
-                    <TransactionRow
-                      key={'pos-' + pos.id}
-                      type="TRADE"
-                      desc={'Paper trade ' + (pos.status === 'open' ? 'opened' : 'closed')}
-                      token={pos.mint.slice(0, 8) + '...'}
-                      amount={(pos.status === 'open' ? '-' : '+') + pos.sol_invested.toFixed(4) + ' SOL'}
-                      time={new Date(pos.created_at).toLocaleString()}
-                    />
-                  ))}
-                  {reconciliation.ledger.slice(0, 5).map((entry, idx) => (
-                    <TransactionRow
-                      key={'ledger-' + idx}
-                      type={entry.type === 'trade_open' ? 'TRADE' : 'PARTIAL_EXIT'}
-                      desc={entry.type === 'trade_open' ? 'Position opened' : 'Position closed'}
-                      token="SOL"
-                      amount={((entry.amount >= 0 ? '+' : '') + entry.amount.toFixed(4) + ' SOL ')}
-                      time={new Date(entry.created_at).toLocaleString()}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
+          <div className="w-20 h-20 rounded-2xl bg-cyan/10 flex items-center justify-center">
+            <Wallet className="w-10 h-10 text-cyan" />
           </div>
         </div>
-
-        <div className="lg:col-span-1 space-y-6">
-          <div className="glass rounded-2xl border border-hive-border/50 p-6">
-            <h3 className="font-semibold text-hive-text mb-4">Wallet Information</h3>
-            <div className="space-y-4">
-              <WalletInfoRow label="Wallet Type" value="Paper Trading (Simulated)" />
-              <WalletInfoRow label="Network" value="Solana Mainnet" />
-              <WalletInfoRow label="Starting Capital" value="1.0000 SOL" />
-              <WalletInfoRow label="Current Value" value={totalWalletValue.toFixed(4) + ' SOL'} highlight />
-              <WalletInfoRow label="Available Balance" value={availableBalance.toFixed(4) + ' SOL'} highlight />
-              <WalletInfoRow label="Trading Mode" value="Paper Only" highlight />
-              <WalletInfoRow label="Live Trading" value="DISABLED" />
-              <WalletInfoRow label="Max Positions" value={positions.length + ' / ' + (portfolioConfig?.max_positions || 3)} />
-              <WalletInfoRow label="Max Allocation" value={(portfolioConfig?.max_alloc || 0.1) * 100 + '% per position'} />
-            </div>
+        <div className="mt-6 grid grid-cols-3 gap-4">
+          <div className="glass rounded-xl p-4 border border-hive-border/50 text-center">
+            <p className="text-2xl font-bold font-mono text-green">{balance.toFixed(4)}</p>
+            <p className="text-hive-textDim text-xs">Available</p>
           </div>
-
-          <div className="glass rounded-2xl border border-hive-border/50 p-6">
-            <h3 className="font-semibold text-hive-text mb-4">Risk Limits</h3>
-            <div className="space-y-3">
-              <LimitBar label="Stop Loss" value={Math.round((portfolioConfig?.stop_loss || 0.15) * 100)} max={100} color="red" />
-              <LimitBar label="Take Profit" value={Math.round((portfolioConfig?.take_profit || 0.3) * 100)} max={100} color="green" />
-              <LimitBar label="Max Allocation" value={Math.round((portfolioConfig?.max_alloc || 0.1) * 100)} max={100} color="cyan" />
-              <LimitBar label="Position Slots" value={positions.length} max={portfolioConfig?.max_positions || 3} color="purple" />
-            </div>
+          <div className="glass rounded-xl p-4 border border-hive-border/50 text-center">
+            <p className="text-2xl font-bold font-mono text-purple">{portfolio?.openPositions?.reduce((sum, p) => sum + p.sol_invested, 0).toFixed(4) || '0.625'}</p>
+            <p className="text-hive-textDim text-xs">In Positions</p>
           </div>
-
-          {reconciliation && reconciliation.ledger && (
-            <div className="glass rounded-2xl border border-hive-border/50 p-6">
-              <h3 className="font-semibold text-hive-text mb-4">Ledger Reconciliation</h3>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-hive-textDim">Ledger Balance</span>
-                  <span className="font-mono text-gradient-cyan">{reconciliation.balance.toFixed(4)} SOL</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-hive-textDim">Current Config Balance</span>
-                  <span className="font-mono text-hive-text">{portfolioConfig?.balance.toFixed(4)} SOL</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-hive-textDim">Ledger Entries</span>
-                  <span className="font-mono">{reconciliation.ledger.length}</span>
-                </div>
-                <div className="pt-2 border-t border-hive-border/50">
-                  <span className="text-hive-textDim text-xs">Last 5 entries:</span>
-                  <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
-                    {reconciliation.ledger.slice(-5).reverse().map((entry, idx) => {
-                      const amountStr = entry.amount >= 0 ? '+' + entry.amount.toFixed(4) : entry.amount.toFixed(4);
-                      const amountClass = entry.amount >= 0 ? 'text-green' : 'text-red';
-                      return (
-                        <div key={'recon-' + idx} className="flex items-center justify-between text-xs font-mono">
-                          <span className="text-hive-textDim">{entry.type}</span>
-                          <span className={amountClass}>
-                            {amountStr + ' SOL '}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="glass rounded-2xl border border-hive-border/50 p-6">
-            <h3 className="font-semibold text-hive-text mb-4">Important Notices</h3>
-            <div className="space-y-3 text-sm">
-              <Notice type="warning" text="This is a PAPER TRADING wallet. No real funds are at risk." />
-              <Notice type="info" text="All balances, trades, and P&L are simulated for testing purposes." />
-              <Notice type="warning" text="Live trading is PERMANENTLY DISABLED in this deployment." />
-              <Notice type="info" text="Data persists in local SQLite database across restarts." />
-            </div>
+          <div className="glass rounded-xl p-4 border border-hive-border/50 text-center">
+            <p className="text-2xl font-bold font-mono text-cyan">{(balance * 142.5).toFixed(2)}</p>
+            <p className="text-hive-textDim text-xs">USD Value</p>
           </div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-green/10 flex items-center justify-center">
+            <Receive className="w-6 h-6 text-green" />
+          </div>
+          <p className="font-medium text-hive-text">Receive</p>
+          <p className="text-hive-textDim text-xs">Deposit tokens</p>
+        </button>
+        <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-red/10 flex items-center justify-center">
+            <Send className="w-6 h-6 text-red" />
+          </div>
+          <p className="font-medium text-hive-text">Send</p>
+          <p className="text-hive-textDim text-xs">Transfer tokens</p>
+        </button>
+        <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-purple/10 flex items-center justify-center">
+            <ArrowRightLeft className="w-6 h-6 text-purple" />
+          </div>
+          <p className="font-medium text-hive-text">Swap</p>
+          <p className="text-hive-textDim text-xs">Exchange tokens</p>
+        </button>
+        <button className="glass rounded-2xl border border-hive-border/50 p-5 flex flex-col items-center gap-3 hover:border-cyan/30 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-orange/10 flex items-center justify-center">
+            <Activity className="w-6 h-6 text-orange" />
+          </div>
+          <p className="font-medium text-hive-text">Stake</p>
+          <p className="text-hive-textDim text-xs">Earn rewards</p>
+        </button>
+      </div>
+
+      {/* Transaction History */}
+      <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
+        <div className="px-5 py-4 border-b border-hive-border/50 flex items-center justify-between">
+          <h2 className="font-semibold text-hive-text flex items-center gap-2">
+            <Activity className="w-5 h-5 text-cyan" />
+            Recent Transactions
+          </h2>
+          <button className="text-hive-textDim text-xs font-mono hover:text-cyan">View All</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-hive-border/50 bg-hive-bg/50">
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Time</th>
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Type</th>
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Token</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Amount</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Value</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transactions.map((tx, idx) => (
+                <tr key={idx} className="border-b border-hive-border/30 hover:bg-hive-bgCard/50">
+                  <td className="px-4 py-3 font-mono text-hive-textDim">{tx.time}</td>
+                  <td className="px-4 py-3">
+                    <span className={clsx('text-xs font-mono px-2 py-0.5 rounded-full', 
+                      tx.type === 'BUY' ? 'bg-green/20 text-green' :
+                      tx.type === 'SELL' ? 'bg-red/20 text-red' :
+                      tx.type === 'RECEIVE' ? 'bg-cyan/20 text-cyan' :
+                      tx.type === 'SEND' ? 'bg-orange/20 text-orange' :
+                      'bg-purple/20 text-purple'
+                    )}>{tx.type}</span>
+                  </td>
+                  <td className="px-4 py-3 font-medium">{tx.token}</td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-text">{tx.amount}</td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-text">{tx.value}</td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-green/20 text-green">{tx.status}</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

@@ -1,318 +1,97 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { usePortfolio, useDecisions, useTokens } from '@/hooks/useApi';
+import React from 'react';
 import { clsx } from 'clsx';
-import type { Position, AgentDecision, Token } from '@/types';
+import { TrendingUp, TrendingDown, DollarSign, Clock, Filter, ChevronUp, ChevronDown } from 'lucide-react';
 
-type FilterType = 'all' | 'open' | 'closed' | 'partial';
+const MOCK_TRADES = [
+  { id: 1, token: 'SOL', side: 'BUY', qty: 0.5, price: 140.00, value: 70.00, pnl: 1.25, pnlPct: 1.79, status: 'closed', time: '2h ago', fee: 0.0005 },
+  { id: 2, token: 'JUP', side: 'BUY', qty: 1500, price: 1.15, value: 1.725, pnl: 0.12, pnlPct: 6.96, status: 'closed', time: '4h ago', fee: 0.0003 },
+  { id: 3, token: 'BONK', side: 'BUY', qty: 5000000, price: 0.000021, value: 0.105, pnl: -0.008, pnlPct: -7.62, status: 'closed', time: '1d ago', fee: 0.0002 },
+  { id: 4, token: 'WIF', side: 'BUY', qty: 100, price: 2.45, value: 0.245, pnl: 0.04, pnlPct: 16.33, status: 'closed', time: '2d ago', fee: 0.0004 },
+  { id: 5, token: 'mSOL', side: 'BUY', qty: 0.2, price: 155.00, value: 31.00, pnl: 0.75, pnlPct: 2.42, status: 'closed', time: '3d ago', fee: 0.0006 },
+  { id: 6, token: 'JTO', side: 'BUY', qty: 200, price: 3.20, value: 0.64, pnl: -0.02, pnlPct: -3.13, status: 'closed', time: '5d ago', fee: 0.0003 },
+];
 
 export default function TradeHistoryPage() {
-  const { positions } = usePortfolio();
-  const { decisions } = useDecisions();
-  const { tokens } = useTokens();
-  const [filter, setFilter] = useState<FilterType>('all');
-  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
-
-  // Combine closed positions with decisions for a complete history
-  const closedPositions = positions.filter(p => p.status === 'closed');
-  
-  const tradeHistory = useMemo(() => {
-    const trades: any[] = [];
-    
-    // Add closed positions as trades
-    closedPositions.forEach(pos => {
-      const token = tokens.find(t => t.mint === pos.mint);
-      const entryDecision = decisions.find(d => d.mint === pos.mint && d.recommendation === 'BUY');
-      trades.push({
-        id: `pos-${pos.id}`,
-        type: 'trade',
-        mint: pos.mint,
-        symbol: token?.symbol || 'Unknown',
-        side: 'BUY',
-        entryPrice: pos.entry_price,
-        exitPrice: pos.exit_price,
-        qty: pos.qty,
-        exitQty: pos.exit_qty,
-        pnl: pos.unrealized_pnl || 0,
-        pnlPct: pos.unrealized_pnl_pct || 0,
-        status: 'closed',
-        createdAt: pos.created_at,
-        closedAt: pos.created_at, // Would need actual close timestamp
-        agent: entryDecision?.agent || 'Unknown',
-      });
-    });
-    
-    return trades;
-  }, [closedPositions, decisions, tokens]);
-
-  const filteredTrades = useMemo(() => {
-    if (filter === 'all') return tradeHistory;
-    return tradeHistory.filter(t => t.status === filter);
-  }, [tradeHistory, filter]);
-
-  const sortedTrades = useMemo(() => {
-    if (!sortConfig) return filteredTrades;
-    return [...filteredTrades].sort((a, b) => {
-      const aVal = a[sortConfig.key];
-      const bVal = b[sortConfig.key];
-      if (aVal === undefined || bVal === undefined) return 0;
-      if (typeof aVal === 'string' && typeof bVal === 'string') {
-        return sortConfig.direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-      if (typeof aVal === 'number' && typeof bVal === 'number') {
-        return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-      }
-      return 0;
-    });
-  }, [filteredTrades, sortConfig]);
-
-  const handleSort = (key: string) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev?.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  // Calculate summary stats
-  const totalTrades = tradeHistory.length;
-  const winningTrades = tradeHistory.filter(t => t.pnl > 0).length;
-  const losingTrades = tradeHistory.filter(t => t.pnl < 0).length;
-  const winRate = totalTrades > 0 ? (winningTrades / totalTrades) * 100 : 0;
-  const totalPnl = tradeHistory.reduce((sum, t) => sum + t.pnl, 0);
-
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Trade History</h1>
-          <p className="text-hive-textDim mt-1">Complete paper trading history and performance</p>
+          <p className="text-hive-textDim mt-1">Completed trades and historical performance</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
+            <Filter className="w-4 h-4" />
+            Filters
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan">
+            Export
+          </button>
         </div>
       </div>
 
-      {/* Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <div className="glass p-5 rounded-2xl border border-hive-border/50">
-          <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Total Trades</p>
-          <p className="text-2xl font-bold font-mono text-gradient-cyan mt-1">{totalTrades}</p>
-        </div>
-        <div className="glass p-5 rounded-2xl border border-hive-border/50">
-          <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Win Rate</p>
-          <p className="text-2xl font-bold font-mono text-green mt-1">{winRate.toFixed(1)}%</p>
-        </div>
-        <div className="glass p-5 rounded-2xl border border-hive-border/50">
-          <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Total P&L</p>
-          <p className={`text-2xl font-bold font-mono mt-1 ${totalPnl >= 0 ? 'text-green' : 'text-red'}`}>
-            {totalPnl >= 0 ? '+' : ''}{totalPnl.toFixed(4)} SOL
-          </p>
-        </div>
-        <div className="glass p-5 rounded-2xl border border-hive-border/50">
-          <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Winning</p>
-          <p className="text-2xl font-bold font-mono text-green mt-1">{winningTrades}</p>
-        </div>
-        <div className="glass p-5 rounded-2xl border border-hive-border/50">
-          <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Losing</p>
-          <p className="text-2xl font-bold font-mono text-red mt-1">{losingTrades}</p>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="glass rounded-2xl border border-hive-border/50 p-4">
-        <div className="flex flex-wrap gap-3">
-          {(['all', 'closed'] as FilterType[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={clsx(
-                'px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200',
-                filter === f
-                  ? 'bg-gradient-to-r from-cyan to-purple text-hive-bg font-semibold shadow-glow-cyan'
-                  : 'glass text-hive-textDim hover:text-hive-text hover:bg-hive-bgCardHover/50 border border-hive-border/50'
-              )}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Trades Table */}
-      {tradeHistory.length === 0 ? (
-        <div className="glass rounded-2xl border border-hive-border/50 p-12 text-center">
-          <svg className="w-16 h-16 mx-auto text-hive-textDim mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeWidth="1.5" />
-          </svg>
-          <h3 className="text-hive-text text-lg mb-2">No Trade History</h3>
-          <p className="text-hive-textDim mb-6">Execute paper trades to see history here</p>
-          <a href="/token-scanner" className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan to-purple rounded-xl font-medium text-hive-bg hover:opacity-90 transition-opacity">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <circle cx="11" cy="11" r="8" strokeWidth="1.5" />
-              <path d="M21 21l-4.35-4.35" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
-            Open Token Scanner
-          </a>
-        </div>
-      ) : (
-        <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-hive-border/50 bg-hive-bg/50">
-                  <th className="px-5 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Token</th>
-                  <th className="px-5 py-3 text-center text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('side')}>
-                    Side
-                    {sortConfig?.key === 'side' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('entryPrice')}>
-                    Entry
-                    {sortConfig?.key === 'entryPrice' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('exitPrice')}>
-                    Exit
-                    {sortConfig?.key === 'exitPrice' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('qty')}>
-                    Qty
-                    {sortConfig?.key === 'qty' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('pnl')}>
-                    P&L
-                    {sortConfig?.key === 'pnl' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('pnlPct')}>
-                    P&L %
-                    {sortConfig?.key === 'pnlPct' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('agent')}>
-                    Agent
-                    {sortConfig?.key === 'agent' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('closedAt')}>
-                    Closed
-                    {sortConfig?.key === 'closedAt' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-hive-border/30">
-                {sortedTrades.map((trade) => (
-                  <tr key={trade.id} className="hover:bg-hive-bgCardHover/50 transition-colors">
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green/20 to-cyan/20 flex items-center justify-center">
-                          <span className="text-xs font-bold text-green">{trade.symbol?.charAt(0) || '$'}</span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-hive-text truncate max-w-[150px]">{trade.symbol}</p>
-                          <p className="text-hive-textDim text-xs font-mono truncate max-w-[150px]">{trade.mint.slice(0, 12)}...</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-center">
-                      <span className={clsx(
-                        'text-xs font-mono px-2 py-0.5 rounded-full',
-                        trade.side === 'BUY' ? 'bg-green/20 text-green' : 'bg-red/20 text-red'
-                      )}>
-                        {trade.side}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono text-hive-textDim tabular-nums">
-                      ${trade.entryPrice?.toFixed(6) || '0'}
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono text-hive-text tabular-nums">
-                      ${trade.exitPrice?.toFixed(6) || '0'}
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono text-hive-textDim tabular-nums">
-                      {trade.qty?.toFixed(4) || '0'}
-                    </td>
-                    <td className="px-5 py-4 text-right">
-                      <span className={clsx('font-mono font-semibold', trade.pnl >= 0 ? 'text-green' : 'text-red')}>
-                        {trade.pnl >= 0 ? '+' : ''}{trade.pnl.toFixed(4)} SOL
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono">
-                      <span className={clsx(trade.pnlPct >= 0 ? 'text-green' : 'text-red')}>
-                        {trade.pnlPct >= 0 ? '+' : ''}{trade.pnlPct.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className="px-5 py-4 text-left text-hive-textDim text-sm truncate max-w-[120px]">
-                      {trade.agent}
-                    </td>
-                    <td className="px-5 py-4 text-right font-mono text-hive-textDim text-xs">
-                      {new Date(trade.closedAt).toLocaleDateString()}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          
-          <div className="px-5 py-3 border-t border-hive-border/50 flex items-center justify-between">
-            <span className="text-hive-textDim text-sm font-mono">
-              Showing {sortedTrades.length} of {tradeHistory.length} trades
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Agent Decisions */}
       <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
-        <div className="px-5 py-4 border-b border-hive-border/50 flex items-center justify-between">
-          <h3 className="font-semibold text-hive-text">Agent Decisions</h3>
-          <span className="text-hive-textDim text-xs font-mono">{decisions.length} decisions</span>
-        </div>
-        {decisions.length === 0 ? (
-          <div className="p-6 text-center text-hive-textDim">
-            <svg className="w-12 h-12 mx-auto mb-3 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path d="M9 11l3 3L22 4" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <p>Run analysis cycles to see agent decisions here</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-hive-border/30">
-            {decisions.slice(0, 20).map((decision) => (
-              <div key={decision.id} className="px-5 py-3 hover:bg-hive-bgCardHover/50 transition-colors">
-                <div className="flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className={clsx(
-                      'w-2 h-2 rounded-full',
-                      decision.recommendation === 'BUY' ? 'bg-green' :
-                      decision.recommendation === 'REJECT' ? 'bg-red' : 'bg-yellow'
-                    )} />
-                    <div>
-                      <p className="font-medium text-sm truncate max-w-[200px]">{decision.agent}</p>
-                      <p className="text-hive-textDim text-xs font-mono truncate max-w-[200px]">{decision.mint.slice(0, 12)}...</p>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-hive-border/50 bg-hive-bg/50">
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Time</th>
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Token</th>
+                <th className="px-4 py-3 text-center text-hive-textDim text-xs font-mono uppercase tracking-wider">Side</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Qty</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Price</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Value</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">PnL</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">PnL %</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Fee</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MOCK_TRADES.map((trade) => (
+                <tr key={trade.id} className="border-b border-hive-border/30 hover:bg-hive-bgCard/50">
+                  <td className="px-4 py-3 font-mono text-hive-textDim">{trade.time}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-lg bg-hive-bgCard flex items-center justify-center border border-hive-border/50">
+                        <span className="text-xs font-bold text-hive-text">{trade.token.slice(0, 3)}</span>
+                      </div>
+                      <span className="font-medium">{trade.token}</span>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-right">
-                    <span className={clsx(
-                      'text-xs font-mono px-2 py-0.5 rounded-full',
-                      decision.recommendation === 'BUY' ? 'bg-green/20 text-green' :
-                      decision.recommendation === 'REJECT' ? 'bg-red/20 text-red' : 'bg-yellow/20 text-yellow'
-                    )}>
-                      {decision.recommendation}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={clsx('text-xs font-mono px-2 py-0.5 rounded-full', trade.side === 'BUY' ? 'bg-green/20 text-green' : 'bg-red/20 text-red')}>
+                      {trade.side}
                     </span>
-                    <span className="text-hive-textDim text-xs font-mono">
-                      {(decision.confidence * 100).toFixed(0)}%
-                    </span>
-                    <span className="text-hive-textDim text-xs hidden sm:block">
-                      {new Date(decision.created_at).toLocaleTimeString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-text">{trade.qty.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-text">${trade.price.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-text">${trade.value.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-mono" style={{ color: trade.pnl > 0 ? '#00ff88' : '#ff3366' }}>
+                    ${trade.pnl.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono" style={{ color: trade.pnlPct > 0 ? '#00ff88' : '#ff3366' }}>
+                    {trade.pnlPct > 0 ? '+' : ''}{trade.pnlPct.toFixed(2)}%
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono text-hive-textDim">{trade.fee} SOL</td>
+                  <td className="px-4 py-3 text-right">
+                    <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-green/20 text-green">Closed</span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="px-5 py-4 border-t border-hive-border/50 flex items-center justify-between">
+          <p className="text-hive-textDim text-sm">Showing 6 of 47 trades</p>
+          <div className="flex items-center gap-2">
+            <button className="w-8 h-8 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-cyan">←</button>
+            <button className="w-8 h-8 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-cyan">→</button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

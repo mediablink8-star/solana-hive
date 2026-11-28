@@ -1,428 +1,201 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
-import { useTokens, useWebSocket } from '@/hooks/useApi';
+import React, { useState } from 'react';
+import { useTokens } from '@/hooks/useApi';
 import { clsx } from 'clsx';
-import type { Token } from '@/types';
-import { TokenPriceChart } from '@/components/Charts';
-import type { UTCTimestamp } from 'lightweight-charts';
+import { Search, Filter, ChevronUp, ChevronDown, TrendingUp, TrendingDown, Minus, DollarSign, RefreshCw } from 'lucide-react';
+
+const SORT_OPTIONS = [
+  { key: 'priceChange24h', label: '24h Change', icon: TrendingUp },
+  { key: 'volume24h', label: 'Volume', icon: DollarSign },
+  { key: 'liquidity', label: 'Liquidity', icon: DollarSign },
+  { key: 'marketCap', label: 'Market Cap', icon: TrendingUp },
+  { key: 'price', label: 'Price', icon: DollarSign },
+];
 
 export default function TokenScannerPage() {
-  const { tokens, refetch } = useTokens();
-  const { wsConnected } = useWebSocket();
+  const { tokens, loading, refetch } = useTokens();
   const [search, setSearch] = useState('');
-  const [sortConfig, setSortConfig] = useState<{ key: keyof Token; direction: 'asc' | 'desc' } | null>(null);
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-  const [showUnknown, setShowUnknown] = useState(false);
+  const [sortKey, setSortKey] = useState('priceChange24h');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  const [selectedToken, setSelectedToken] = useState<any>(null);
 
-  // Filter out UNKNOWN tokens by default
-  const validTokens = useMemo(() => 
-    tokens.filter(t => t.symbol !== 'UNKNOWN' || showUnknown),
-    [tokens, showUnknown]
-  );
-
-  const filteredTokens = useMemo(() => {
-    let result = validTokens;
-    
-    if (search) {
-      const searchLower = search.toLowerCase();
-      result = result.filter(t => 
-        t.symbol?.toLowerCase().includes(searchLower) ||
-        t.mint.toLowerCase().includes(searchLower) ||
-        t.name?.toLowerCase().includes(searchLower)
-      );
-    }
-
-    if (sortConfig) {
-      result = [...result].sort((a, b) => {
-        const aVal = a[sortConfig.key];
-        const bVal = b[sortConfig.key];
-        if (aVal === undefined || bVal === undefined) return 0;
-        if (typeof aVal === 'string' && typeof bVal === 'string') {
-          return sortConfig.direction === 'asc' 
-            ? aVal.localeCompare(bVal) 
-            : bVal.localeCompare(aVal);
-        }
-        if (typeof aVal === 'number' && typeof bVal === 'number') {
-          return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-        }
-        return 0;
-      });
-    }
-
-    return result;
-  }, [validTokens, search, sortConfig]);
-
-  const handleSort = (key: keyof Token) => {
-    setSortConfig(prev => ({
-      key,
-      direction: prev?.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
-    }));
-  };
-
-  const formatNumber = (num: number | undefined) => {
-    if (num === undefined || num === null) return '—';
-    if (num >= 1e9) return (num / 1e9).toFixed(2) + 'B';
-    if (num >= 1e6) return (num / 1e6).toFixed(2) + 'M';
-    if (num >= 1e3) return (num / 1e3).toFixed(2) + 'K';
-    return num.toLocaleString();
-  };
-
-  const getLiquidityColor = (liquidity: number) => {
-    if (liquidity >= 1e6) return 'text-green';
-    if (liquidity >= 1e5) return 'text-yellow';
-    if (liquidity >= 1e4) return 'text-orange';
-    return 'text-red';
-  };
-
-  // Generate mock candlestick data for selected token
-  const generateMockCandles = (token: Token) => {
-    let basePrice = token.price || 0.0001;
-    const volatility = 0.05; // 5% volatility
-    const candles = [];
-    const now = Date.now();
-    
-    for (let i = 47; i >= 0; i--) {
-      const time = Math.floor((now - i * 30 * 60 * 1000) / 1000) as UTCTimestamp;
-      const change = (Math.random() - 0.5) * 2 * volatility;
-      const open = basePrice * (1 + (Math.random() - 0.5) * 0.02);
-      const close = open * (1 + change);
-      const high = Math.max(open, close) * (1 + Math.random() * 0.01);
-      const low = Math.min(open, close) * (1 - Math.random() * 0.01);
-      
-      candles.push({
-        time,
-        open,
-        high,
-        low,
-        close,
-      });
-      basePrice = close;
-    }
-    
-    return candles;
-  };
+  const filteredTokens = tokens
+    .filter(t => t.symbol.toLowerCase().includes(search.toLowerCase()) || t.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => {
+      const aVal = a[sortKey as keyof typeof a] || 0;
+      const bVal = b[sortKey as keyof typeof b] || 0;
+      return sortDir === 'desc' ? (bVal > aVal ? 1 : -1) : (aVal > bVal ? 1 : -1);
+    });
 
   return (
     <div className="space-y-6">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Token Scanner</h1>
-            <p className="text-hive-textDim mt-1">Live Solana token discovery and market data</p>
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-gradient-cyan font-display font-bold text-3xl lg:text-4xl">Token Scanner</h1>
+          <p className="text-hive-textDim mt-1">Live market discovery and token intelligence</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button onClick={refetch} className="flex items-center gap-2 px-4 py-2 glass rounded-lg border border-hive-border/50 text-hive-textMuted hover:text-cyan hover:border-cyan/50 transition-colors">
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      {/* Search & Filters */}
+      <div className="glass rounded-2xl border border-hive-border/50 p-5">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-hive-textDim" />
+            <input
+              type="search"
+              placeholder="Search tokens by symbol or name..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="w-full bg-hive-bg/50 border border-hive-border/50 rounded-lg pl-12 pr-4 py-3 text-hive-text placeholder-hive-textDim focus:outline-none focus:border-cyan/50 focus:ring-1 focus:ring-cyan/50"
+            />
           </div>
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full glass border border-hive-border/50">
-              <span className={clsx('w-2 h-2 rounded-full', wsConnected ? 'bg-green animate-pulse' : 'bg-red')} />
-              <span className={clsx('text-xs font-mono', wsConnected ? 'text-green' : 'text-red')}>
-                {wsConnected ? 'LIVE' : 'OFFLINE'}
-              </span>
-            </div>
-            <button
-              onClick={refetch}
-              className="glass px-4 py-2 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center gap-2 text-sm font-medium"
+          <div className="flex items-center gap-2">
+            <select
+              value={sortKey}
+              onChange={e => setSortKey(e.target.value)}
+              className="bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-3 text-hive-text focus:outline-none focus:border-cyan/50"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path d="M23 4v6h-6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M1 20v-6h6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Scan Now
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.key} value={opt.key}>{opt.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
+              className="bg-hive-bg/50 border border-hive-border/50 rounded-lg px-4 py-3 text-hive-text hover:border-cyan/50 transition-colors"
+            >
+              {sortDir === 'desc' ? <ChevronDown className="w-5 h-5" /> : <ChevronUp className="w-5 h-5" />}
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Stats Bar */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Total Discovered</p>
-            <p className="text-2xl font-bold font-mono text-gradient-cyan">{validTokens.length}</p>
-          </div>
-          <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">High Liquidity (100k+)</p>
-            <p className="text-2xl font-bold font-mono text-green">
-              {validTokens.filter(t => (t.liquidity || 0) >= 100000).length}
-            </p>
-          </div>
-          <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Avg Liquidity</p>
-            <p className="text-2xl font-bold font-mono text-cyan">
-              ${formatNumber(validTokens.reduce((sum, t) => sum + (t.liquidity || 0), 0) / (validTokens.length || 1))}
-            </p>
-          </div>
-          <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Unknown Filtered</p>
-            <p className="text-2xl font-bold font-mono text-hive-textDim">
-              {tokens.length - validTokens.length}
-            </p>
-          </div>
-          <div className="glass p-4 rounded-2xl border border-hive-border/50">
-            <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Last Scan</p>
-            <p className="text-2xl font-bold font-mono text-hive-text">
-              {new Date().toLocaleTimeString()}
-            </p>
-          </div>
-        </div>
-
-        {/* Search & Filters */}
-        <div className="glass rounded-2xl border border-hive-border/50 p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-hive-textDim" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="8" strokeWidth="1.5" />
-                <path d="M21 21l-4.35-4.35" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search by symbol, name, or mint address..."
-                className="w-full glass rounded-xl px-10 py-3 text-hive-text placeholder-hive-textDim border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
-              />
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <label className="flex items-center gap-2 text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={showUnknown}
-                  onChange={(e) => setShowUnknown(e.target.checked)}
-                  className="w-4 h-4 rounded border-hive-border/50 bg-hive-bg text-cyan focus:ring-cyan/50"
-                />
-                Show UNKNOWN
-              </label>
-              <div className="flex items-center gap-2">
-                <label className="text-hive-textDim text-xs font-mono uppercase tracking-wider">Sort:</label>
-                <select
-                  value={sortConfig ? `${sortConfig.key}-${sortConfig.direction}` : ''}
-                  onChange={(e) => {
-                    const [key, direction] = e.target.value.split('-');
-                    if (key) setSortConfig({ key: key as keyof Token, direction: direction as 'asc' | 'desc' });
-                    else setSortConfig(null);
-                  }}
-                  className="glass rounded-xl px-3 py-2 text-sm text-hive-text border border-hive-border/50 focus:outline-none focus:border-cyan/50 bg-transparent"
-                >
-                  <option value="">Default</option>
-                  <option value="symbol-asc">Symbol A-Z</option>
-                  <option value="symbol-desc">Symbol Z-A</option>
-                  <option value="price-asc">Price Low-High</option>
-                  <option value="price-desc">Price High-Low</option>
-                  <option value="liquidity-asc">Liquidity Low-High</option>
-                  <option value="liquidity-desc">Liquidity High-Low</option>
-                  <option value="volume24h-asc">Volume Low-High</option>
-                  <option value="volume24h-desc">Volume High-Low</option>
-                  <option value="priceChange24h-asc">24h Change Low-High</option>
-                  <option value="priceChange24h-desc">24h Change High-Low</option>
-                  <option value="updated_at-asc">Oldest First</option>
-                  <option value="updated_at-desc">Newest First</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Token Table */}
-        <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-hive-border/50 bg-hive-bg/50">
-                  <th className="px-5 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Token</th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('price')}>
-                    Price
-                    {sortConfig?.key === 'price' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('liquidity')}>
-                    Liquidity
-                    {sortConfig?.key === 'liquidity' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('volume24h')}>
-                    24h Volume
-                  </th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('priceChange24h')}>
-                    24h Change
-                    {sortConfig?.key === 'priceChange24h' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
-                  <th className="px-5 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Mint</th>
-                  <th className="px-5 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider cursor-pointer hover:text-cyan transition-colors"
-                      onClick={() => handleSort('updated_at')}>
-                    Updated
-                    {sortConfig?.key === 'updated_at' && (sortConfig.direction === 'asc' ? ' ▲' : ' ▼')}
-                  </th>
+      {/* Token Table */}
+      <div className="glass rounded-2xl border border-hive-border/50 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-hive-border/50 bg-hive-bg/50">
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">#</th>
+                <th className="px-4 py-3 text-left text-hive-textDim text-xs font-mono uppercase tracking-wider">Token</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Price</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">24h Change</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Volume</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Liquidity</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Market Cap</th>
+                <th className="px-4 py-3 text-right text-hive-textDim text-xs font-mono uppercase tracking-wider">Holders</th>
+                <th className="px-4 py-3 text-right"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-hive-textDim">
+                    <div className="flex items-center justify-center gap-3">
+                      <div className="w-8 h-8 border-2 border-cyan/50 border-t-transparent rounded-full animate-spin" />
+                      <span>Loading tokens...</span>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-hive-border/30">
-                {filteredTokens.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="px-5 py-12 text-center text-hive-textDim">
-                      {validTokens.length === 0 ? 'No tokens discovered yet. Scanner runs every 30 seconds.' : 'No tokens match your search criteria.'}
+              ) : filteredTokens.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-12 text-center text-hive-textDim">No tokens found</td>
+                </tr>
+              ) : (
+                filteredTokens.map((token, idx) => (
+                  <tr key={token.mint} className="border-b border-hive-border/30 hover:bg-hive-bgCard/50 transition-colors cursor-pointer" onClick={() => setSelectedToken(token)}>
+                    <td className="px-4 py-3 text-hive-textDim text-xs font-mono">{idx + 1}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-hive-bgCard flex items-center justify-center border border-hive-border/50">
+                          <span className="text-xs font-bold text-hive-text">{token.symbol.slice(0, 3)}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-hive-text">{token.symbol}</p>
+                          <p className="text-hive-textDim text-xs truncate max-w-[150px]">{token.name}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-hive-text">${token.price.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-right">
+                      <span className={clsx('text-xs font-mono px-2 py-0.5 rounded-full', token.priceChange24h && token.priceChange24h > 0 ? 'bg-green/20 text-green' : token.priceChange24h && token.priceChange24h < 0 ? 'bg-red/20 text-red' : 'bg-hive-border/50 text-hive-textDim')}>
+                        {token.priceChange24h ? `${token.priceChange24h > 0 ? '+' : ''}${token.priceChange24h.toFixed(2)}%` : '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono text-hive-textDim">${token.volume24h?.toLocaleString() || '—'}</td>
+                    <td className="px-4 py-3 text-right font-mono text-hive-textDim">${token.liquidity?.toLocaleString() || '—'}</td>
+                    <td className="px-4 py-3 text-right font-mono text-hive-textDim">${token.marketCap?.toLocaleString() || '—'}</td>
+                    <td className="px-4 py-3 text-right font-mono text-hive-textDim">{token.holders?.toLocaleString() || '—'}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button className="text-hive-textDim hover:text-cyan transition-colors">Details</button>
                     </td>
                   </tr>
-                ) : (
-                  filteredTokens.map((token) => (
-                    <tr 
-                      key={token.mint}
-                      className="hover:bg-hive-bgCardHover/50 transition-colors cursor-pointer"
-                      onClick={() => setSelectedToken(token)}
-                    >
-                      <td className="px-5 py-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green/20 to-cyan/20 flex items-center justify-center">
-                            <span className="text-xs font-bold text-green">{token.symbol?.charAt(0) || '$'}</span>
-                          </div>
-                          <div>
-                            <p className="font-medium text-hive-text truncate max-w-[150px]">{token.symbol || 'Unknown'}</p>
-                            <p className="text-hive-textDim text-xs truncate max-w-[150px]">{token.name || 'Unknown Token'}</p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-right font-mono text-hive-text tabular-nums">
-                        ${token.price?.toFixed(6) || '0'}
-                      </td>
-                      <td className="px-5 py-4 text-right font-mono tabular-nums">
-                        <span className={clsx(getLiquidityColor(token.liquidity || 0))}>
-                          ${formatNumber(token.liquidity)}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 text-right font-mono text-hive-textDim tabular-nums">
-                        ${formatNumber(token.volume24h)}
-                      </td>
-                      <td className="px-5 py-4 text-right font-mono tabular-nums">
-                        <span className={clsx(
-                          token.priceChange24h !== undefined && token.priceChange24h > 0 ? 'text-green' :
-                          token.priceChange24h !== undefined && token.priceChange24h < 0 ? 'text-red' : 'text-hive-text'
-                        )}>
-                          {token.priceChange24h !== undefined ? (token.priceChange24h > 0 ? '+' : '') + token.priceChange24h.toFixed(2) + '%' : '—'}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 font-mono text-hive-textDim text-xs truncate max-w-[120px]">
-                        {token.mint.slice(0, 12)}...
-                      </td>
-                      <td className="px-5 py-4 text-right font-mono text-hive-textDim text-xs">
-                        {new Date(token.updated_at).toLocaleTimeString()}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          
-          {filteredTokens.length > 0 && (
-            <div className="px-5 py-3 border-t border-hive-border/50 flex items-center justify-between">
-              <span className="text-hive-textDim text-sm font-mono">
-                Showing {filteredTokens.length} of {validTokens.length} tokens ({tokens.length} total)
-              </span>
-              <span className="text-hive-textDim text-xs">
-                Auto-refresh: 30s
-              </span>
-            </div>
-          )}
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
+      </div>
 
-        {/* Token Detail Modal */}
-        {selectedToken && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-               onClick={() => setSelectedToken(null)}
-               role="dialog"
-               aria-modal="true"
-               aria-label={`${selectedToken.symbol} details`}>
-            <div className="w-full max-w-4xl glass-strong border border-cyan/30 rounded-2xl overflow-hidden animate-slide-in"
-                 onClick={(e) => e.stopPropagation()}>
-              <div className="px-6 py-4 border-b border-hive-border/50 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green/20 to-cyan/20 flex items-center justify-center">
-                    <span className="text-xl font-bold text-green">{selectedToken.symbol?.charAt(0) || '$'}</span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-hive-text text-lg">{selectedToken.symbol}</h3>
-                    <p className="text-hive-textDim text-sm">{selectedToken.name}</p>
-                  </div>
+      {/* Token Detail Modal */}
+      {selectedToken && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4" onClick={() => setSelectedToken(null)}>
+          <div className="w-full max-w-2xl glass-strong border border-cyan/30 rounded-2xl overflow-hidden animate-slide-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-4 border-b border-hive-border/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-hive-bgCard flex items-center justify-center border border-hive-border/50">
+                  <span className="text-sm font-bold text-hive-text">{selectedToken.symbol.slice(0, 4)}</span>
                 </div>
-                <button
-                  onClick={() => setSelectedToken(null)}
-                  className="w-8 h-8 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-red transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path d="M18 6L6 18M6 6l12 12" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                </button>
+                <div>
+                  <p className="font-semibold text-hive-text">{selectedToken.symbol}</p>
+                  <p className="text-hive-textDim text-xs">{selectedToken.name}</p>
+                </div>
               </div>
-              <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-                {/* Price Chart */}
-                <div className="glass rounded-xl border border-hive-border/50 p-4">
-                  <h4 className="font-semibold text-hive-text mb-3">Price Chart (48h - 30m intervals)</h4>
-                  <TokenPriceChart
-                    height={300}
-                    data={generateMockCandles(selectedToken)}
-                    symbol={selectedToken.symbol}
-                  />
+              <button onClick={() => setSelectedToken(null)} className="w-8 h-8 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-red">✕</button>
+            </div>
+            <div className="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Current Price</p>
+                  <p className="text-2xl font-bold font-mono text-gradient-cyan">${selectedToken.price.toLocaleString()}</p>
                 </div>
-
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="glass rounded-xl p-4">
-                    <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Current Price</p>
-                    <p className="text-2xl font-bold font-mono text-gradient-cyan">${selectedToken.price?.toFixed(6) || '0'}</p>
-                  </div>
-                  <div className="glass rounded-xl p-4">
-                    <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Liquidity</p>
-                    <p className="text-2xl font-bold font-mono text-green">${formatNumber(selectedToken.liquidity)}</p>
-                  </div>
-                  <div className="glass rounded-xl p-4">
-                    <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">24h Volume</p>
-                    <p className="text-2xl font-bold font-mono text-cyan">${formatNumber(selectedToken.volume24h)}</p>
-                  </div>
-                  <div className="glass rounded-xl p-4">
-                    <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">24h Change</p>
-                    <p className={clsx(
-                      'text-2xl font-bold font-mono',
-                      selectedToken.priceChange24h !== undefined && selectedToken.priceChange24h > 0 ? 'text-green' :
-                      selectedToken.priceChange24h !== undefined && selectedToken.priceChange24h < 0 ? 'text-red' : 'text-hive-text'
-                    )}>
-                      {selectedToken.priceChange24h !== undefined ? (selectedToken.priceChange24h > 0 ? '+' : '') + selectedToken.priceChange24h.toFixed(2) + '%' : '—'}
-                    </p>
-                  </div>
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">24h Change</p>
+                  <p className={clsx('text-2xl font-bold font-mono', selectedToken.priceChange24h && selectedToken.priceChange24h > 0 ? 'text-green' : 'text-red')}>
+                    {selectedToken.priceChange24h ? `${selectedToken.priceChange24h > 0 ? '+' : ''}${selectedToken.priceChange24h.toFixed(2)}%` : '—'}
+                  </p>
                 </div>
-
-                <div className="glass rounded-xl p-4">
-                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-2">Mint Address</p>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-hive-text text-sm font-mono bg-hive-bg/50 px-3 py-2 rounded-lg border border-hive-border/50 truncate">
-                      {selectedToken.mint}
-                    </code>
-                    <button className="w-10 h-10 rounded-lg glass flex items-center justify-center text-hive-textMuted hover:text-cyan transition-colors"
-                            onClick={() => navigator.clipboard.writeText(selectedToken.mint)}>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" strokeWidth="1.5" />
-                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  </div>
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">24h Volume</p>
+                  <p className="text-lg font-mono text-hive-text">${selectedToken.volume24h?.toLocaleString() || '—'}</p>
                 </div>
-
-                <div className="flex gap-3">
-                  <button className="flex-1 glass px-4 py-3 rounded-xl border border-hive-border/50 hover:border-cyan/30 transition-colors flex items-center justify-center gap-2 text-sm font-medium">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Run Analysis
-                  </button>
-                  <button className="flex-1 bg-gradient-to-r from-cyan to-purple px-4 py-3 rounded-xl flex items-center justify-center gap-2 text-hive-bg font-medium hover:opacity-90 transition-opacity">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M3 5v14a2 2 0 0 0 2 2h16v-4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M3 11h18" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    Paper Trade
-                  </button>
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Liquidity</p>
+                  <p className="text-lg font-mono text-hive-text">${selectedToken.liquidity?.toLocaleString() || '—'}</p>
                 </div>
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Market Cap</p>
+                  <p className="text-lg font-mono text-hive-text">${selectedToken.marketCap?.toLocaleString() || '—'}</p>
+                </div>
+                <div className="glass rounded-xl p-4 border border-hive-border/50">
+                  <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-1">Holders</p>
+                  <p className="text-lg font-mono text-hive-text">{selectedToken.holders?.toLocaleString() || '—'}</p>
+                </div>
+              </div>
+              <div className="glass rounded-xl p-4 border border-hive-border/50">
+                <p className="text-hive-textDim text-xs font-mono uppercase tracking-wider mb-2">Mint Address</p>
+                <code className="text-hive-text text-xs font-mono break-all">{selectedToken.mint}</code>
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+    </div>
   );
 }
