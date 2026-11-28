@@ -31,12 +31,218 @@ const stateColors: Record<string, THREE.Color> = {
   executing: new THREE.Color(0xff8800),
 };
 
+<<<<<<< HEAD
 function OrbitingParticles({ position, color, count, radius }: { 
   position: [number, number, number]; 
   color: THREE.Color; 
   count: number; 
   radius: number; 
 }) {
+=======
+const STATE_EMISSIVE_INTENSITY: Record<string, number> = {
+  idle: 0.15,
+  active: 0.8,
+  thinking: 0.7,
+  communicating: 0.7,
+  approving: 0.8,
+  rejecting: 0.9,
+  executing: 0.75,
+};
+
+const AGENT_SPECIALIZATION_COLORS: Record<string, string> = {
+  'Central Intelligence': '#00e5ff',
+  'Market Discovery': '#00ff88',
+  'Security Analysis': '#ff3366',
+  'Price Action': '#b87dff',
+  'Narrative Detection': '#ff8800',
+  'Trade Strategy': '#00e5ff',
+  'Risk Authority': '#ff3366',
+  'Trade Execution': '#00ff88',
+  'Portfolio Ops': '#b87dff',
+};
+
+function calculate3DPositions(): Record<string, [number, number, number]> {
+  const positions: Record<string, [number, number, number]> = {};
+  const center: [number, number, number] = [0, 0, 0];
+  const ringRadius = 28;
+  const verticalSpread = 12;
+  
+  positions['jarvis'] = center;
+  
+  const agents = [
+    { id: 'token-scout', angle: -Math.PI / 2, vOffset: verticalSpread * 0.5 },
+    { id: 'rug-detector', angle: -Math.PI / 4, vOffset: -verticalSpread * 0.5 },
+    { id: 'technical-analyst', angle: 0, vOffset: -verticalSpread },
+    { id: 'social-intelligence', angle: Math.PI / 4, vOffset: -verticalSpread },
+    { id: 'strategy-analyst', angle: Math.PI / 2, vOffset: -verticalSpread * 0.5 },
+    { id: 'risk-manager', angle: 3 * Math.PI / 4, vOffset: verticalSpread * 0.5 },
+    { id: 'execution-trader', angle: Math.PI, vOffset: verticalSpread },
+    { id: 'portfolio-manager', angle: -3 * Math.PI / 4, vOffset: verticalSpread },
+  ];
+  
+  agents.forEach(({ id, angle, vOffset }) => {
+    positions[id] = [
+      Math.cos(angle) * ringRadius,
+      vOffset,
+      Math.sin(angle) * ringRadius,
+    ];
+  });
+  
+  return positions;
+}
+
+const NODE_POSITIONS_3D = calculate3DPositions();
+
+function JarvisCore({ 
+  node, 
+  onClick, 
+  onHover, 
+  onHoverEnd,
+  isHovered,
+  isSelected 
+}: { 
+  node: SpiderNode;
+  onClick: () => void;
+  onHover: () => void;
+  onHoverEnd: () => void;
+  isHovered: boolean;
+  isSelected: boolean;
+}) {
+  const coreRef = useRef<THREE.Group>(null);
+  const ringsRef = useRef<THREE.Mesh[]>([]);
+  const pulseRef = useRef(0);
+  const { camera } = useThree();
+  
+  const baseColor = NODE_COLORS[node.color] || new THREE.Color(0x00e5ff);
+  const stateColor = STATE_COLORS[node.state] || baseColor;
+  const emissiveIntensity = STATE_EMISSIVE_INTENSITY[node.state] || 0.5;
+
+  useFrame((_, delta) => {
+    if (!coreRef.current) return;
+    
+    const time = Date.now() * 0.001;
+    pulseRef.current += delta;
+    
+    coreRef.current.rotation.y += delta * 0.08;
+    coreRef.current.rotation.x += delta * 0.03;
+    coreRef.current.rotation.z += delta * 0.02;
+    
+    const pulse = Math.sin(pulseRef.current * 2) * 0.15 + 0.85;
+    const hoverBoost = isHovered ? 0.3 : 0;
+    const selectBoost = isSelected ? 0.2 : 0;
+    
+    coreRef.current.children.forEach((child, idx) => {
+      if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshPhysicalMaterial) {
+        const ringPulse = Math.sin(pulseRef.current * 1.5 + idx * 0.8) * 0.2 + 0.8;
+        child.material.emissiveIntensity = THREE.MathUtils.lerp(
+          child.material.emissiveIntensity,
+          (emissiveIntensity + hoverBoost + selectBoost) * ringPulse,
+          delta * 4
+        );
+        
+        if (idx < 3) {
+          child.rotation.y += delta * (0.15 + idx * 0.05) * (idx % 2 === 0 ? 1 : -1);
+          child.rotation.x += delta * (0.08 + idx * 0.03) * (idx % 2 === 0 ? 1 : -1);
+        }
+      }
+    });
+    
+    coreRef.current.scale.setScalar(1 + Math.sin(pulseRef.current * 1.5) * 0.02);
+  });
+
+  const handleClick = (event: any) => {
+    event.stopPropagation();
+    onClick();
+  };
+
+  const handlePointerOver = (event: any) => {
+    event.stopPropagation();
+    onHover();
+  };
+
+  const handlePointerOut = (event: any) => {
+    event.stopPropagation();
+    onHoverEnd();
+  };
+
+  return (
+    <group ref={coreRef} position={node.position as [number, number, number]} onClick={handleClick} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut}>
+      {/* Outer glow sphere */}
+      <mesh>
+        <sphereGeometry args={[JARVIS_RADIUS * 1.6, 32, 32]} />
+        <meshBasicMaterial
+          color={baseColor}
+          transparent
+          opacity={0.08 + (isHovered ? 0.1 : 0)}
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+      
+      {/* Rotating rings */}
+      {[0, 1, 2].map((ringIdx) => (
+        <mesh
+          key={`ring-${ringIdx}`}
+          rotation={
+            ringIdx === 0 ? [Math.PI / 2, 0, 0] :
+            ringIdx === 1 ? [0, Math.PI / 2, 0] :
+            [Math.PI / 4, 0, 0]
+          }
+        >
+          <torusGeometry args={[JARVIS_RADIUS * (1.15 + ringIdx * 0.18), 0.08, 16, RING_SEGMENTS]} />
+          <meshPhysicalMaterial
+            color={baseColor}
+            emissive={stateColor}
+            emissiveIntensity={emissiveIntensity}
+            metalness={0.2}
+            roughness={0.3}
+            clearcoat={1}
+            clearcoatRoughness={0.1}
+            transparent
+            opacity={0.6 - ringIdx * 0.1}
+            side={THREE.DoubleSide}
+          />
+        </mesh>
+      ))}
+      
+      {/* Inner core icosahedron */}
+      <mesh>
+        <icosahedronGeometry args={[JARVIS_RADIUS * 0.7, 2]} />
+        <meshPhysicalMaterial
+          color={baseColor}
+          emissive={stateColor}
+          emissiveIntensity={emissiveIntensity * 1.5}
+          metalness={0.4}
+          roughness={0.2}
+          clearcoat={1}
+          clearcoatRoughness={0.05}
+          transmission={0.4}
+          thickness={0.8}
+          transparent
+          opacity={0.9}
+        />
+      </mesh>
+      
+      {/* Central energy sphere */}
+      <mesh>
+        <sphereGeometry args={[JARVIS_RADIUS * 0.35, 32, 32]} />
+        <meshBasicMaterial
+          color={baseColor}
+          transparent
+          opacity={0.8}
+          blending={THREE.AdditiveBlending}
+          depthWrite={false}
+        />
+      </mesh>
+      
+      {/* Particle field around core */}
+      <CoreParticleField coreRadius={JARVIS_RADIUS} color={baseColor} />
+    </group>
+  );
+}
+
+function CoreParticleField({ coreRadius, color }: { coreRadius: number; color: THREE.Color }) {
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   const particlesRef = useRef<THREE.Points>(null);
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -327,7 +533,15 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   sourcePos: [number, number, number];
   targetPos: [number, number, number];
 }) {
+<<<<<<< HEAD
   const lineRef = useRef<any>(null);
+=======
+  const lineRef = useRef<{ line: THREE.Line; glow: THREE.Line }>({ 
+    line: new THREE.Line(), 
+    glow: new THREE.Line() 
+  });
+  const pulseRef = useRef(0);
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   
   const midPoint = new THREE.Vector3()
     .addVectors(
@@ -352,6 +566,7 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
   const targetColor = targetNode ? colors[targetNode.color] : new THREE.Color(0xb87dff);
 
   const material = useMemo(() => 
+<<<<<<< HEAD
     new THREE.LineDashedMaterial({
       color: sourceColor,
       dashSize: 0.5,
@@ -359,16 +574,47 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
       transparent: true,
       opacity: 0.3 + edge.intensity * 0.5,
       linewidth: 2,
+=======
+    new THREE.LineBasicMaterial({
+      color: sourceColor,
+      transparent: true,
+      opacity: 0.4 + edge.intensity * 0.5,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
     }),
     [sourceColor, edge.intensity]
   );
 
+  const glowMaterial = useMemo(() => 
+    new THREE.LineBasicMaterial({
+      color: sourceColor,
+      transparent: true,
+      opacity: 0.15 + edge.intensity * 0.25,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
+    }),
+    [sourceColor, edge.intensity]
+  );
+
+<<<<<<< HEAD
   const lineObject = useMemo(() => new THREE.Line(geometry, material), [geometry, material]);
   lineObject.computeLineDistances();
   
+=======
+  // Create Three.js Line objects once
+  const lineObjects = useMemo(() => {
+    const line = new THREE.Line(geometry, material);
+    const glow = new THREE.Line(geometry, glowMaterial);
+    glow.renderOrder = -1; // Render glow behind main line
+    return { line, glow };
+  }, [geometry, material, glowMaterial]);
+
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   useFrame((_, delta) => {
     if (!lineRef.current) return;
     
+<<<<<<< HEAD
     const time = Date.now() * 0.001;
     (material as any).dashOffset = (time * 0.5) % 1;
     material.opacity = THREE.MathUtils.lerp(
@@ -383,6 +629,31 @@ function EdgeLine({ edge, sourcePos, targetPos }: {
       ref={lineRef}
       object={lineObject}
     />
+=======
+    if (material && lineObjects.line) {
+      material.opacity = THREE.MathUtils.lerp(
+        material.opacity,
+        0.3 + edge.intensity * 0.5 + pulse * 0.1,
+        delta * 4
+      );
+      material.color.lerpColors(sourceColor, targetColor, pulse * 0.3 + 0.35);
+    }
+    
+    if (glowMaterial && lineObjects.glow) {
+      glowMaterial.opacity = THREE.MathUtils.lerp(
+        glowMaterial.opacity,
+        0.1 + edge.intensity * 0.2 + pulse * 0.05,
+        delta * 3
+      );
+    }
+  });
+
+  return (
+    <group>
+      <primitive object={lineObjects.glow} />
+      <primitive object={lineObjects.line} />
+    </group>
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   );
 }
 
@@ -559,6 +830,7 @@ function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNode
   );
 }
 
+<<<<<<< HEAD
 function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
   const { camera, size } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
@@ -574,6 +846,45 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
         y: (-pos.y * 0.5 + 0.5) * size.height,
         visible: pos.z < 1,
       };
+=======
+function VolumetricLightShafts() {
+  const groupRef = useRef<THREE.Group>(null);
+  const shaftsRef = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]>([]);
+  
+  const geometry = useMemo(() => {
+    const g = new THREE.ConeGeometry(2, 60, 8, 1, true);
+    g.translate(0, -30, 0);
+    return g;
+  }, []);
+  
+  const material = useMemo(() => 
+    new THREE.MeshBasicMaterial({
+      color: '#00e5ff',
+      transparent: true,
+      opacity: 0.015,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+    }),
+    []
+  );
+  
+  // Initialize shafts
+  useEffect(() => {
+    if (!groupRef.current) return;
+    for (let i = 0; i < 6; i++) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.set(0, i * Math.PI / 3, 0);
+      groupRef.current!.add(mesh);
+      shaftsRef.current.push(mesh);
+    }
+  }, [geometry, material]);
+  
+  useFrame((_, delta) => {
+    const time = Date.now() * 0.001;
+    shaftsRef.current.forEach((shaft, idx) => {
+      shaft.rotation.y += delta * 0.02 * (idx % 2 === 0 ? 1 : -1);
+      shaft.material.opacity = 0.01 + Math.sin(Date.now() * 0.0003 + idx) * 0.005;
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
     });
     setPositions(newPositions);
   });
@@ -599,6 +910,7 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
   };
 
   return (
+<<<<<<< HEAD
     <>
       {nodes.map(node => {
         const pos = positions[node.id];
@@ -628,6 +940,9 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
         );
       })}
     </>
+=======
+    <group ref={groupRef} />
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
   );
 }
 
@@ -658,6 +973,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
     });
   }, [agents]);
 
+<<<<<<< HEAD
   useEffect(() => {
     const state = useSpiderStore.getState();
     
@@ -755,6 +1071,24 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
       }
     });
   }, [wsMessages]);
+=======
+  // Update camera position in store when user interacts
+  useFrame(() => {
+    const orbitControls = controls as any;
+    if (orbitControls && orbitControls.enabled) {
+      useSpiderStore.getState().setCameraPosition([
+        camera.position.x,
+        camera.position.y,
+        camera.position.z,
+      ]);
+      useSpiderStore.getState().setCameraTarget([
+        orbitControls.target.x,
+        orbitControls.target.y,
+        orbitControls.target.z,
+      ]);
+    }
+  });
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
 
   return (
     <div className="relative w-full h-full">

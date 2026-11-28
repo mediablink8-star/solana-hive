@@ -3,6 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useWebSocket } from '@/hooks/useApi';
 import { clsx } from 'clsx';
+<<<<<<< HEAD
+=======
+import { Terminal, Filter, Download, Trash2, RefreshCw, ChevronUp, ChevronDown, Search, AlertTriangle, CheckCircle, Info, X, Play, Pause } from 'lucide-react';
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
 
 const LOG_LEVELS = ['debug', 'info', 'warn', 'error', 'critical'];
 const LOG_SOURCES = ['API', 'WS', 'Agents', 'Engine', 'DB', 'Scanner', 'Risk'];

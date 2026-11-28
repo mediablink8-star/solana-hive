@@ -5,7 +5,11 @@ import { useTokens, useAgents, useDecisions, usePortfolio, useWebSocket, usePerf
 import { clsx } from 'clsx';
 import { 
   TrendingUp, TrendingDown, DollarSign, Users, Zap, Brain, 
+<<<<<<< HEAD
   Shield, Target, Heart, Wallet, Network, CheckCircle, Package 
+=======
+  Shield, Target, Activity, Wallet, Network, CheckCircle, Briefcase 
+>>>>>>> 89ff60593bbeb9e071effc8a63565a7e9ecd3114
 } from 'lucide-react';
 
 const KPI_CARDS = [
