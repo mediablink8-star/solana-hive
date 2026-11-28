@@ -775,6 +775,7 @@ function NetworkBackground() {
 }
 
 function VolumetricLightShafts() {
+  const groupRef = useRef<THREE.Group>(null);
   const shaftsRef = useRef<THREE.Mesh<THREE.BufferGeometry, THREE.MeshBasicMaterial>[]>([]);
   
   const geometry = useMemo(() => {
@@ -794,20 +795,27 @@ function VolumetricLightShafts() {
     []
   );
   
+  // Initialize shafts
+  useEffect(() => {
+    if (!groupRef.current) return;
+    for (let i = 0; i < 6; i++) {
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.rotation.set(0, i * Math.PI / 3, 0);
+      groupRef.current!.add(mesh);
+      shaftsRef.current.push(mesh);
+    }
+  }, [geometry, material]);
+  
   useFrame((_, delta) => {
     const time = Date.now() * 0.001;
     shaftsRef.current.forEach((shaft, idx) => {
       shaft.rotation.y += delta * 0.02 * (idx % 2 === 0 ? 1 : -1);
-      shaft.material.opacity = 0.01 + Math.sin(time * 0.3 + idx) * 0.005;
+      shaft.material.opacity = 0.01 + Math.sin(Date.now() * 0.0003 + idx) * 0.005;
     });
   });
   
   return (
-    <group ref={shaftsRef}>
-      {[0, 1, 2, 3, 4, 5].map((i) => (
-        <mesh key={i} geometry={geometry} material={material} rotation={[0, i * Math.PI / 3, 0]} />
-      ))}
-    </group>
+    <group ref={groupRef} />
   );
 }
 
