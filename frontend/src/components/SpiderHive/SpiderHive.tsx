@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect, useMemo, useState, Suspense } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { INITIAL_SPIDER_NODES, INITIAL_SPIDER_EDGES } from '@/store';
 import type { SpiderNode, SpiderEdge } from '@/types';
@@ -164,7 +164,7 @@ function NodeMesh({ node, isJarvis, onClick, onHover, onHoverEnd }: {
   const isSelected = false;
 
   const geometry = useMemo(() => 
-    isJarvis 
+    isJarvis
       ? new THREE.IcosahedronGeometry(radius, 2)
       : new THREE.OctahedronGeometry(radius, 1),
     [isJarvis, radius]
@@ -498,254 +498,6 @@ function Particles({ edge, sourcePos, targetPos }: {
   return <points ref={particlesRef} geometry={geometry} material={material} />;
 }
 
-function NodeMeshLabel({ node, isJarvis }: { node: SpiderNode; isJarvis: boolean }) {
-  const { camera } = useThree();
-  const [screenPos, setScreenPos] = useState({ x: 0, y: 0, visible: false });
-  const vector = new THREE.Vector3(...node.position);
-  
-  useFrame(() => {
-    if (typeof window === 'undefined') return;
-    const pos = vector.clone().project(camera);
-    setScreenPos({
-      x: (pos.x * 0.5 + 0.5) * window.innerWidth,
-      y: (-pos.y * 0.5 + 0.5) * window.innerHeight,
-      visible: pos.z < 1,
-    });
-  });
-
-  if (!screenPos.visible || typeof window === 'undefined') return null;
-
-  return (
-    <div
-      className={clsx(
-        'fixed pointer-events-none z-10 transition-all duration-300',
-        'text-xs font-mono px-2 py-1 rounded bg-hive-bgCard/90 backdrop-blur border',
-        isJarvis ? 'text-cyan border-cyan/50 text-gradient-cyan' : 'text-hive-textMuted border-hive-border',
-        'whitespace-nowrap'
-      )}
-      style={{
-        left: screenPos.x,
-        top: screenPos.y - (isJarvis ? 50 : 30),
-        transform: 'translate(-50%, -100%)',
-      }}
-    >
-      {node.name}
-      <span className="ml-2 text-[10px] opacity-60">{node.role}</span>
-    </div>
-  );
-}
-
-function SpiderHiveCanvasInner({ onNodeClick }: { onNodeClick: (node: SpiderNode) => void }) {
-  const { nodes, edges, hoveredNode, selectedNode, cameraPosition, cameraTarget, updateEdgeIntensity, addEdgeParticle } = useSpiderStore();
-  const { agents, wsMessages } = useDataStore();
-
-  useEffect(() => {
-    const state = useSpiderStore.getState();
-    
-    const mapAgentStatusToNodeState = (status: string): SpiderNode['state'] => {
-      switch (status) {
-        case 'analyzing': return 'thinking';
-        case 'communicating': return 'communicating';
-        case 'approving': return 'approving';
-        case 'rejecting': return 'rejecting';
-        case 'executing': return 'executing';
-        default: return 'idle';
-      }
-    };
-    
-    agents.forEach(agent => {
-      const node = state.nodes.find(n => n.id === agent.id);
-      const mappedState = mapAgentStatusToNodeState(agent.status);
-      if (node && node.state !== mappedState) {
-        state.updateNodeState(agent.id, mappedState);
-      }
-    });
-  }, [agents]);
-
-  useEffect(() => {
-    const state = useSpiderStore.getState();
-    
-    const messageFlow: Record<string, Array<{from: string, to: string, color: string}>> = {
-      token_discovered: [
-        { from: 'jarvis', to: 'token-scout', color: '#00e5ff' },
-        { from: 'token-scout', to: 'rug-detector', color: '#00ff88' },
-      ],
-      analysis_started: [
-        { from: 'jarvis', to: 'rug-detector', color: '#ff3366' },
-        { from: 'jarvis', to: 'technical-analyst', color: '#b87dff' },
-        { from: 'jarvis', to: 'social-intelligence', color: '#ff8800' },
-      ],
-      analysis_complete: [
-        { from: 'rug-detector', to: 'strategy-analyst', color: '#ff3366' },
-        { from: 'technical-analyst', to: 'strategy-analyst', color: '#b87dff' },
-        { from: 'social-intelligence', to: 'strategy-analyst', color: '#ff8800' },
-      ],
-      decision_made: [
-        { from: 'strategy-analyst', to: 'risk-manager', color: '#00e5ff' },
-      ],
-      trade_executed: [
-        { from: 'risk-manager', to: 'execution-trader', color: '#00ff88' },
-        { from: 'execution-trader', to: 'portfolio-manager', color: '#00ff88' },
-      ],
-      risk_alert: [
-        { from: 'risk-manager', to: 'jarvis', color: '#ff3366' },
-      ],
-    };
-
-    wsMessages.forEach(message => {
-      const flow = messageFlow[message.type];
-      if (flow) {
-        flow.forEach(({ from, to, color }) => {
-          const edgeExists = state.edges.some(e => 
-            (e.source === from && e.target === to) || (e.source === to && e.target === from)
-          );
-          if (edgeExists) {
-            state.addEdgeParticle(from, to, {
-              id: crypto.randomUUID(),
-              progress: 0,
-              speed: 0.8,
-              color,
-              size: 0.4,
-            });
-            
-            state.updateEdgeIntensity(from, to, 1.0);
-            setTimeout(() => {
-              state.updateEdgeIntensity(from, to, 0.3);
-            }, 2000);
-          }
-        });
-
-        const nodeStateMap: Record<string, { nodeId: string; state: SpiderNode['state'] }[]> = {
-          token_discovered: [
-            { nodeId: 'token-scout', state: 'active' },
-            { nodeId: 'jarvis', state: 'communicating' },
-          ],
-          analysis_started: [
-            { nodeId: 'rug-detector', state: 'thinking' },
-            { nodeId: 'technical-analyst', state: 'thinking' },
-            { nodeId: 'social-intelligence', state: 'thinking' },
-            { nodeId: 'jarvis', state: 'communicating' },
-          ],
-          analysis_complete: [
-            { nodeId: 'rug-detector', state: 'communicating' },
-            { nodeId: 'technical-analyst', state: 'communicating' },
-            { nodeId: 'social-intelligence', state: 'communicating' },
-            { nodeId: 'strategy-analyst', state: 'thinking' },
-          ],
-          decision_made: [
-            { nodeId: 'strategy-analyst', state: 'communicating' },
-            { nodeId: 'risk-manager', state: 'thinking' },
-          ],
-          trade_executed: [
-            { nodeId: 'risk-manager', state: 'approving' },
-            { nodeId: 'execution-trader', state: 'executing' },
-            { nodeId: 'portfolio-manager', state: 'active' },
-          ],
-          risk_alert: [
-            { nodeId: 'risk-manager', state: 'rejecting' },
-            { nodeId: 'jarvis', state: 'active' },
-          ],
-        };
-
-        const nodeUpdates = nodeStateMap[message.type];
-        if (nodeUpdates) {
-          nodeUpdates.forEach(({ nodeId, state: nodeState }) => {
-            state.updateNodeState(nodeId, nodeState, 1.0);
-            setTimeout(() => {
-              state.updateNodeState(nodeId, 'idle', 0);
-            }, 3000);
-          });
-        }
-      }
-    });
-  }, [wsMessages]);
-
-  return (
-    <div className="relative w-full h-full">
-      <Canvas
-        camera={{ position: cameraPosition, fov: 50, near: 0.1, far: 200 }}
-        style={{ width: '100%', height: '100%', display: 'block' }}
-        gl={{ antialias: true, alpha: true, preserveDrawingBuffer: false, powerPreference: 'high-performance' }}
-        shadows={false}
-        onCreated={({ gl }) => {
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.2;
-        }}
-      >
-        <color attach="background" args={['#03050a']} />
-        <fog attach="fog" args={['#03050a', 40, 150]} />
-        
-        <ambientLight intensity={0.6} color="#0a1528" />
-        <directionalLight position={[30, 40, 30]} intensity={1.0} color="#00e5ff" />
-        <directionalLight position={[-30, -40, -30]} intensity={0.6} color="#b87dff" />
-        <pointLight position={[0, 0, 0]} color="#00e5ff" intensity={1.0} distance={80} decay={2} />
-        <pointLight position={[0, 20, 0]} color="#b87dff" intensity={0.5} distance={60} decay={2} />
-        
-        <gridHelper args={[100, 20, '#00e5ff15', '#b87dff15']} position={[0, -35, 0]} />
-        
-        <OrbitControls 
-          enableDamping={true}
-          dampingFactor={0.05}
-          enablePan={true}
-          enableZoom={true}
-          enableRotate={true}
-          minDistance={20}
-          maxDistance={150}
-          minPolarAngle={0}
-          maxPolarAngle={Math.PI}
-          autoRotate={false}
-          autoRotateSpeed={0.5}
-        />
-        
-        {edges.map((edge, idx) => {
-          const sourceNode = nodes.find(n => n.id === edge.source);
-          const targetNode = nodes.find(n => n.id === edge.target);
-          if (!sourceNode || !targetNode) return null;
-          
-          return (
-            <React.Fragment key={`edge-${idx}`}>
-              <EdgeLine edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
-              <Particles edge={edge} sourcePos={sourceNode.position} targetPos={targetNode.position} />
-            </React.Fragment>
-          );
-        })}
-        
-        {nodes.map((node) => {
-          const isJarvis = node.id === 'jarvis';
-          return (
-            <React.Fragment key={node.id}>
-              <NodeMesh
-                node={node}
-                isJarvis={isJarvis}
-                onClick={() => onNodeClick(node)}
-                onHover={() => useSpiderStore.getState().setHoveredNode(node.id)}
-                onHoverEnd={() => useSpiderStore.getState().setHoveredNode(null)}
-              />
-            </React.Fragment>
-          );
-        })}
-      <OverlayManager nodes={nodes} onNodeClick={onNodeClick} />
-
-      <div className="absolute bottom-4 left-4 glass px-4 py-3 rounded-xl border-hive-border/50 text-hive-textMuted text-sm font-mono">
-        <div className="flex items-center gap-4 flex-wrap">
-          <span className="text-hive-text font-semibold">NODES</span>
-          {nodes.map(node => (
-            <span key={node.id} className="flex items-center gap-1.5">
-              <span 
-                className="w-2 h-2 rounded-full"
-                style={{ backgroundColor: node.color }}
-              />
-              <span className={node.id === 'jarvis' ? 'text-gradient-cyan font-semibold' : ''}>
-                {node.name}
-              </span>
-            </span>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function NodeLabelsOverlay({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
   const { camera, size } = useThree();
   const [positions, setPositions] = useState<Record<string, { x: number; y: number; visible: boolean }>>({});
@@ -834,38 +586,6 @@ function StateIndicatorsOverlay({ nodes }: { nodes: SpiderNode[] }) {
     rejecting: 'hive-red',
     executing: 'hive-orange',
   };
-
-  return (
-    <>
-      {nodes.map(node => {
-        const pos = positions[node.id];
-        if (!pos || !pos.visible || typeof window === 'undefined') return null;
-        return (
-          <div
-            key={node.id}
-            className={`fixed pointer-events-none z-10 transition-all duration-300 text-[9px] font-mono px-1.5 py-0.5 rounded-full ${stateColors[node.state]} border border-current/50`}
-            style={{
-              left: pos.x,
-              top: pos.y - 35,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            {stateLabels[node.state]}
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
-function OverlayManager({ nodes, onNodeClick }: { nodes: SpiderNode[]; onNodeClick: (node: SpiderNode) => void }) {
-  return (
-    <>
-      <NodeLabelsOverlay nodes={nodes} onNodeClick={onNodeClick} />
-      <StateIndicatorsOverlay nodes={nodes} />
-    </>
-  );
-}
 
   return (
     <>
@@ -1098,6 +818,7 @@ function SpiderHiveCanvas({ onNodeClick }: { onNodeClick: (node: SpiderNode) => 
             </span>
           ))}
         </div>
+      </div>
     </div>
   );
 }
